@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+// Start programm
 enum {STR_SIZE = 82};
 
 void
