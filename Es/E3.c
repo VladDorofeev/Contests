@@ -4,25 +4,48 @@
 
 
 void
-SpecialPrint(char *arr){
-    char buf[4] = {0, 0, 0, 0};
+split_string_by_not_latin (char *str) {
+    int was_latin = 0;
+    char *writer_from_begin = str;
+    while (*str) {
+        if (isalpha(*str)) {
+            was_latin = 1;
+            *writer_from_begin++ = *str;
+        } else if (was_latin) {
+            *writer_from_begin++ = 0;
+            was_latin = 0;
+        }
+        str++;
+    }
+    *writer_from_begin++ = 0;
+}
+
+char *
+get_first_three_sym (const char *str) {
+    static char buf[4] = {0, 0, 0, 0};
     char *end_buf = &buf[3];
     char *ptr_buf = &buf[0];
-    int flag = 1;
-    while (flag) {
-        if (!*arr) {
-            flag = 0;
-        } else {
-            char *cycle = arr;
-            while ((*cycle) && (ptr_buf != end_buf)) {
-                *ptr_buf++ = *cycle++;
-            }
-            if (ptr_buf == end_buf) {
-                printf("%s\n", buf);
-            }
-            ptr_buf = &buf[0];
-            arr += strlen(arr) + 1;
+    while ((*str) && (ptr_buf != end_buf)) {
+        *ptr_buf++ = *str++;
+    }
+    return &buf[0];
+}
+
+
+void
+print_first_three_symbols(char *arr){
+    while (1) {
+        if (*arr == 0) {
+            return;
         }
+
+        char *substring = arr;
+
+        char *first_three_sym = get_first_three_sym(substring);
+        if (strlen(first_three_sym) == 3) {
+            printf("%s\n", first_three_sym);
+        }
+        arr += strlen(arr) + 1;
     }
 }
 
@@ -31,19 +54,7 @@ main (void) {
     static char arr[82];
 
     char *ptr = fgets(arr, sizeof(arr), stdin);
-    int flag = 0;
-    char *writer = &arr[0];
-    while (*ptr) {
-        if (isalpha(*ptr)) {
-            flag = 1;
-            *writer++ = *ptr;
-        } else if (flag) {
-            *writer++ = 0;
-            flag = 0;
-        }
-        ptr++;
-    }
-    *writer++ = 0;
-    SpecialPrint(&arr[0]);
+    split_string_by_not_latin(ptr);
+    print_first_three_symbols(&arr[0]);
     return 0;
 }
