@@ -1,22 +1,22 @@
 #include <stdio.h>
 
-struct Mtr {
-    int m, n;
-    double body[100][100];
-};
+typedef struct {
+    int row, col;
+    double items[100][100];
+}  Matrix;
 
 void 
-MultMtr(struct Mtr *Mtr1, struct Mtr *Mtr2, struct Mtr *Mtr3) {
-    double temp = 0;
-    Mtr3->m = Mtr1->m;
-    Mtr3->n = Mtr2->n;
-    for (int i = 0; i < Mtr1->m; ++i) {
-        for (int m = 0; m < Mtr2->n; ++m){
-            for (int j = 0; j < Mtr1->n; ++j){
-                temp += Mtr1->body[i][j] * Mtr2->body[j][m];
+multiplication_matrix (Matrix *first_multiplier, Matrix *second_multiplier, Matrix *result_multiplication) {
+    double matrix_element = 0;
+    result_multiplication->row = first_multiplier->row;
+    result_multiplication->col = second_multiplier->col;
+    for (int i = 0; i < first_multiplier->row; ++i) {
+        for (int m = 0; m < second_multiplier->col; ++m){
+            for (int j = 0; j < first_multiplier->col; ++j){
+                matrix_element += first_multiplier->items[i][j] * second_multiplier->items[j][m];
             }
-            Mtr3->body[i][m] = temp;
-            temp = 0;
+            result_multiplication->items[i][m] = matrix_element;
+            matrix_element = 0;
         }
     }
 }
@@ -24,27 +24,31 @@ MultMtr(struct Mtr *Mtr1, struct Mtr *Mtr2, struct Mtr *Mtr3) {
 
 int 
 main (void) {
-    static struct Mtr Mtr1, Mtr2, Mtr3; 
-    scanf("%d", &Mtr1.m);
-    scanf("%d", &Mtr1.n);
-    for (int i = 0; i < Mtr1.m; ++i) {
-        for (int j = 0; j < Mtr1.n; ++j) {
-            scanf("%lf", &Mtr1.body[i][j]);
+    static Matrix first_multiplier, second_multiplier, result_multiplication; 
+    
+    //Scanning Matrixs
+    scanf("%d", &first_multiplier.row);
+    scanf("%d", &first_multiplier.col);
+    for (int i = 0; i < first_multiplier.row; ++i) {
+        for (int j = 0; j < first_multiplier.col; ++j) {
+            scanf("%lf", &first_multiplier.items[i][j]);
         }
     }
-    scanf("%d", &Mtr2.m);
-    scanf("%d", &Mtr2.n);
-    for (int i = 0; i < Mtr2.m; ++i) {
-        for (int j = 0; j < Mtr2.n; ++j) {
-            scanf("%lf", &Mtr2.body[i][j]);
+    scanf("%d", &second_multiplier.row);
+    scanf("%d", &second_multiplier.col);
+    for (int i = 0; i < second_multiplier.row; ++i) {
+        for (int j = 0; j < second_multiplier.col; ++j) {
+            scanf("%lf", &second_multiplier.items[i][j]);
         }
     }
     
-    MultMtr(&Mtr1, &Mtr2, &Mtr3);
-    for (int i = 0; i < Mtr3.m; ++i) {
-        for (int j = 0; j < Mtr3.n; ++j) {
-            printf("%.1lf ", Mtr3.body[i][j]);
+    multiplication_matrix(&first_multiplier, &second_multiplier, &result_multiplication);
+
+    //Print Matrix
+    for (int i = 0; i < result_multiplication.row; ++i) {
+        for (int j = 0; j < result_multiplication.col; ++j) {
+            printf("%.1lf ", result_multiplication.items[i][j]);
         }
-            printf("\n");
+        printf("\n");
     }
 }
