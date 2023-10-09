@@ -7,7 +7,7 @@ main (void) {
     scanf("%d", &N);
     int *arr;
 
-    arr = malloc(sizeof N * N);
+    arr = (int *)calloc(N, sizeof &arr);
     for (int i = 0; i < N; ++i) {
         scanf("%d", &arr[i]);
     }
