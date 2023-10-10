@@ -2,9 +2,9 @@
 #include <stdlib.h>
 
 struct List_Element {
+    int item;
     struct List_Element *next;
     struct List_Element *prev;
-    int item;
 };
 
 typedef struct {
@@ -18,9 +18,6 @@ delete_element (List *list, struct List_Element *delete) {
     struct List_Element *next = delete->next;
     if (list->first == delete) {
         list->first = NULL;
-        if (prev != list->first) {
-            list->first = next;
-        }
     }
 
     prev->next = next;
@@ -42,7 +39,7 @@ add_element (List *list, struct List_Element *add) {
 }
 
 void
-print_list (List *list) {
+rev_print_list (List *list) {
     if (list == NULL) {
         return;
     }
@@ -50,12 +47,12 @@ print_list (List *list) {
     if (head == NULL) {
         return;
     }
-    printf("%d ", head->item);
-    struct List_Element *cur_elem = head->next;
+    struct List_Element *cur_elem = head->prev;
     while (cur_elem != head) {
         printf("%d ", cur_elem->item);
-        cur_elem = cur_elem->next;
+        cur_elem = cur_elem->prev;
     }
+    printf("%d ", head->item);
     printf("\n");
 }
 
@@ -66,7 +63,8 @@ create_list (List **list) {
     int item;
     while (scanf("%d", &item) == 1) {
         //Get memory for new element
-        new_elem = (struct List_Element *)calloc(1, sizeof (*list)->first);
+        new_elem = (struct List_Element *)malloc(sizeof(struct List_Element *));
+        
         
         //Initialization new element 
         new_elem->item = item;
@@ -76,7 +74,7 @@ create_list (List **list) {
         //Add to list
         //if we are adding first element 
         if (*list == NULL) {
-            *list = (List *)calloc(1, sizeof list);
+            *list = (List *)malloc(sizeof list);
             (*list)->first = new_elem;
         } else {
             add_element(*list, new_elem);
@@ -90,17 +88,30 @@ create_list (List **list) {
     }
 }
 struct List_Element *
-elem_greater_100(List *list, struct List_Element * cur_elem) {
+elem_greater_100(List *list, struct List_Element *cur_elem) {
     struct List_Element *temp;
     temp = cur_elem->next;
     delete_element(list, cur_elem);
+    if (list->first == NULL) {
+        list->first = temp;
+    }
     add_element(list, cur_elem);
     return temp;
 }
 struct List_Element *
-elem_less_100_odd(List *list, struct List_Element * cur_elem) {
+elem_less_100_odd(List *list, struct List_Element *cur_elem) {
     struct List_Element *temp;
     delete_element(list, cur_elem);
+    if (list->first == NULL) {
+        //Check len list > 1
+        if (cur_elem->next == cur_elem) {
+            free(cur_elem);
+            list->first = NULL;
+            free(list);
+            return NULL;
+        }   
+        list->first = cur_elem->next;
+    }
     temp = cur_elem->next;
     free(cur_elem);
     return temp;
@@ -111,24 +122,59 @@ edit_list (List *list) {
         return;
     }
     struct List_Element *first_elem = list->first;
+    struct List_Element *first_greater_100 = NULL;
+    int was_greater_100 = 0;
     struct List_Element *cur_elem;
 
-    if (first_elem->item > 100) {
-        cur_elem = elem_greater_100(list, first_elem);
-    } else if ((first_elem->item < 100) && (((first_elem->item) % 2) != 0)) {
-        cur_elem = elem_less_100_odd(list, first_elem);
-    } else {
-        cur_elem = first_elem->next;
+    //Working on first element
+    while (1) {
+        if (first_elem->item > 100){
+            //Check len list > 1
+            if (first_elem->next == first_elem) {
+                return;
+            }
+
+            //Save first greater 100
+            if (!was_greater_100) {
+                was_greater_100 = 1;
+                first_greater_100 = first_elem;
+            } else if (first_elem == first_greater_100) {
+                //If all nums greater 100
+                return;
+            }
+            first_elem = elem_greater_100(list, first_elem);
+            continue;
+        }
+        if ((first_elem->item < 100) && (((first_elem->item) % 2) != 0)) {
+            first_elem = elem_less_100_odd(list, first_elem);
+            if (first_elem == NULL) {
+                return;
+            }
+        } else {
+            cur_elem = first_elem->next;
+            break;
+        }
     }
 
-    //TODO: change to for
-    while (list->first != cur_elem) {
+    //Iteration by the list
+    while ((list->first != cur_elem) && ((!was_greater_100) || (first_greater_100 != cur_elem))){
         if (cur_elem->item > 100){
+            //Save first greater 100
+            if (!was_greater_100) {
+                was_greater_100 = 1;
+                first_greater_100 = cur_elem;
+            } else if (cur_elem == first_greater_100) {
+                //If last nums greater 100
+                return;
+            }
             cur_elem = elem_greater_100(list, cur_elem);
             continue;
         }
         if ((cur_elem->item < 100) && (((cur_elem->item) % 2) != 0)) {
-            cur_elem = elem_less_100_odd(list, cur_elem);            
+            cur_elem = elem_less_100_odd(list, cur_elem);
+            if (cur_elem == NULL) {
+                return;
+            }        
             continue;
         } else {
             cur_elem = cur_elem->next;
@@ -138,19 +184,36 @@ edit_list (List *list) {
 
 }
 
+
+void
+free_list (List *list) {
+    if (list == NULL) {
+        return;
+    }
+    struct List_Element *head = list->first;
+    if (head == NULL) {
+        return;
+    }
+
+    struct List_Element *cur_elem;
+    cur_elem = head->prev;
+    struct List_Element *temp;
+    while (cur_elem != head) {
+        temp = cur_elem;
+        cur_elem = cur_elem->prev;
+        free(temp);
+    }
+    free(head);
+    free(list);
+}
+
 int
 main (void) {
 
     List *list = NULL;
-    
-    
     create_list(&list);
-    printf("before:");
-    print_list(list);
-    
     edit_list(list);
-    printf("after:");
-    print_list(list);
-
+    rev_print_list(list);
+    free_list(list);
     return 0;
 }
