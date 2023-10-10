@@ -12,7 +12,7 @@ main (void) {
     while (scanf("%d", &arr[cnt]) == 1) {
         if (cnt == cur_buf - 1) {
             cur_buf *= 2;
-            arr = (int *)realloc(arr, sizeof &arr * cur_buf);
+            arr = (int *)realloc(arr, sizeof arr[0] * cur_buf);
         }
         cnt++;
     }
