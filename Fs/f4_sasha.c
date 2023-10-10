@@ -9,27 +9,6 @@ typedef struct my_list
 }my_list;
 
 void
-kill_list(my_list *list)
-{
-    my_list *ptr = list;
-    my_list *s_ptr = list->prev;
-    while (list != NULL) {
-        if (list != list->next) {
-            list = list->next;
-            if (ptr == s_ptr) {
-                free(ptr);
-                break;
-            }
-            free(ptr);
-            ptr = list;
-        } else {
-            free(list);
-            break;
-        }
-    }
-}
-
-void
 delete_elem(my_list *list, my_list *elem){
     if (!((elem == list) && (list->next == list) && (list->prev == list))) {
         elem->prev->next = elem->next;
@@ -57,9 +36,10 @@ change_list(my_list *list) {
                     ptr_th = list->next;
                     ptr_th->prev = list->prev;
                     delete_elem(list, ptr);
-                    free(ptr);
+                    free(list);
                     return ptr_th;
                 } else {
+                    free(list);
                     return NULL;
                 }
             } else {
@@ -77,8 +57,17 @@ change_list(my_list *list) {
             } else {
                 if (list->next != list){
                         ptr_th = list->next;
-                        delete_elem(list, ptr);
-                        append_elem(ptr_th, ptr);
+                        if (ptr_th->value <= 100) {
+                            if (second_ptr != list) { 
+                                delete_elem(ptr_th, ptr);
+                                append_elem(second_ptr, ptr);
+                            } else {
+                                delete_elem(ptr_th, ptr);
+                                append_elem(ptr_th, ptr); 
+                            }
+                        } else {
+                            ptr_th = ptr_th->prev;
+                        }
                         return ptr_th;
                 } else {
                     return list;
@@ -118,21 +107,21 @@ main(void){
     if (head_elem != NULL) {
         head_elem->prev = prev_elem;
         prev_elem->next = head_elem;
-    }
-    if (head_elem != NULL) {
         head_elem = change_list(head_elem);
         if (head_elem != NULL) {
             curr_elem = head_elem->prev;
             while (1) {
                 printf("%d ", curr_elem->value);
                 if (curr_elem == head_elem) {
+                    free(curr_elem);
                     break;
                 }
+                prev_elem = curr_elem;
                 curr_elem = curr_elem->prev;
+                free(prev_elem);
             }
-            kill_list(head_elem);
-            printf("\n");
         }
     }
+    printf("\n");
     return 0;
 }
