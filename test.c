@@ -1,50 +1,95 @@
 #include <stdio.h>
-// Start programm
-enum {STR_SIZE = 82};
+#include <stdlib.h>
 
-void
-new_strstr(const char * f_str, const char * s_str)
+enum
 {
-    size_t f_str_size = 0, s_str_size = 0;
-    const char * f_run_ptr = f_str, * s_run_ptr = s_str, * print_ptr = f_str;
-    while(*f_run_ptr != '\0' ||  *s_run_ptr != '\0') {
-        if (*f_run_ptr != '\0') {
-            ++f_run_ptr;
-            ++f_str_size;
-        }
-        if (*s_run_ptr != '\0') {
-            ++s_run_ptr;
-            ++s_str_size;
+    BUF_SIZE = 10000,
+    GETVAL = 0,
+    SETVAL = 1,
+};
+
+typedef struct Element {
+    int value;
+    int id;
+} Element;
+
+typedef union Argument {
+    int number;
+    int *pointer;
+} Argument;
+
+static Element data[BUF_SIZE];
+
+int
+command(int id, int cmd, Argument arg)
+{
+    Element *temp = NULL;
+    for (int i = 0; i < BUF_SIZE; ++i) {
+        if (data[i].id == id) {
+            temp = &data[i];
+            break;
         }
     }
-    f_run_ptr = f_str;
-    for (int i = 0; i < (int)(f_str_size - s_str_size); ++i) {
-        char flag = 0;
-        const char * check_ptr = f_run_ptr;
-        s_run_ptr = s_str;
-        for (int j = 0; j < s_str_size; ++j) {
-            if (*check_ptr != *s_run_ptr) {
-                flag = 1;
-                break;
-            }
-            ++check_ptr;
-            ++s_run_ptr;
-        }
-        if (!flag) {
-            print_ptr = check_ptr;
-        }
-        ++f_run_ptr;
+    if (temp == NULL) {
+        return 1;
     }
-    printf("%s", print_ptr);
+    if (cmd == SETVAL) {
+        temp->value = arg.number;
+    } else if (cmd == GETVAL) {
+        *arg.pointer = temp->value;
+    } else {
+        return 2;
+    }
+    return 0;
+}
+
+int
+insert_to_buff(int i, int id, int value)
+{
+    if (i >= BUF_SIZE) {
+        return 1;
+    }
+    data[i].id = id;
+    data[i].value = value;
+    return 0;
 }
 
 int
 main(void)
 {
-    char inp_str[STR_SIZE];
-    fgets(inp_str, sizeof inp_str, stdin);
+    for (int i = 0; i < BUF_SIZE; ++i) {
+        data[i].value = 0;
+        data[i].id = 0;
+    }
     
-    new_strstr(inp_str, "");
+    int i, id, value, d;
 
+    if (scanf("%d%d%d", &i, &id, &value) != 3) {
+        return 1;
+    }
+    if (insert_to_buff(i, id, value) == 1) {
+        return 1;
+    }
+    if (scanf("%d%d%d", &i, &id, &value) != 3) {
+        return 1;
+    }
+    if (insert_to_buff(i, id, value) == 1) {
+        return 1;
+    }
+    if (scanf("%d", &d) != 1) {
+        return 1;
+    }
+
+    int loc;
+    Argument arg;
+    arg.pointer = &loc;
+
+    if (command(d, GETVAL, arg)) {
+        printf("NONE\n");
+        return 0;
+    }
+    arg.number = *arg.pointer + 1;
+    command(d, SETVAL, arg);
+    printf("%d\n", arg.number);
     return 0;
 }
