@@ -89,56 +89,53 @@ create_list (List **list) {
         ((*list)->first)->prev = new_elem;
     }
 }
-
-int
-get_len(List *list) {
-    struct List_Element *first = list->first;
-    struct List_Element *cur_elem = first->next;
-    int cnt = 1;
-    while (cur_elem != first) {
-        cnt++;
-        cur_elem = cur_elem->next;
-    }
-    return cnt;
+struct List_Element *
+elem_greater_100(List *list, struct List_Element * cur_elem) {
+    struct List_Element *temp;
+    temp = cur_elem->next;
+    delete_element(list, cur_elem);
+    add_element(list, cur_elem);
+    return temp;
 }
-
+struct List_Element *
+elem_less_100_odd(List *list, struct List_Element * cur_elem) {
+    struct List_Element *temp;
+    delete_element(list, cur_elem);
+    temp = cur_elem->next;
+    free(cur_elem);
+    return temp;
+}
 void
 edit_list (List *list) {
     if (list == NULL) {
         return;
     }
     struct List_Element *first_elem = list->first;
-    struct List_Element *cur_elem = first_elem->next;
-    struct List_Element *temp;
-    int length = get_len(list);
-    while ((length--) > 0) {
+    struct List_Element *cur_elem;
+
+    if (first_elem->item > 100) {
+        cur_elem = elem_greater_100(list, first_elem);
+    } else if ((first_elem->item < 100) && (((first_elem->item) % 2) != 0)) {
+        cur_elem = elem_less_100_odd(list, first_elem);
+    } else {
+        cur_elem = first_elem->next;
+    }
+
+    //TODO: change to for
+    while (list->first != cur_elem) {
         if (cur_elem->item > 100){
-            delete_element(list, cur_elem);
-            if (list->first == NULL) {
-                list->first = cur_elem;
-                cur_elem->next = cur_elem;
-                cur_elem->prev = cur_elem;
-                return;
-            }
-            temp = cur_elem->next;
-            add_element(list, cur_elem);
-            cur_elem = temp;
+            cur_elem = elem_greater_100(list, cur_elem);
             continue;
         }
         if ((cur_elem->item < 100) && (((cur_elem->item) % 2) != 0)) {
-            delete_element(list, cur_elem);
-            if (list->first == NULL) {
-                list = NULL;
-                free(cur_elem);
-                return;
-            }
-            temp = cur_elem;
-            cur_elem = cur_elem->next;
-            free(temp);
+            cur_elem = elem_less_100_odd(list, cur_elem);            
+            continue;
         } else {
             cur_elem = cur_elem->next;
+            continue;
         }
     }
+
 }
 
 int
