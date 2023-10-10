@@ -5,30 +5,24 @@
 
 char *
 get_string(void) {
-    char *buf;
-    int length = 1;
-    buf = (char *)calloc(1, sizeof buf[0]);
-    
-    int pos = 0;
-    char chr = getc(stdin);
-    while (!(feof(stdin)) && (chr != '\n')) {
-        buf[pos] = chr;
-        if (pos == length - 1) {
-            length *= 2;
-            buf = realloc(buf, length * sizeof buf[0]);
-        }
-        pos++;
-        chr = getc(stdin);
-        if ((ferror(stdin)) || (feof(stdin))) {
+    char *str= (char *)calloc(1, sizeof str[0]);
+    *str = 0;
+    int new_size;
+    static char buf[1024];
+    char *buf_ptr = &buf[0];
+    while((buf_ptr = fgets(buf_ptr, sizeof buf, stdin)) != NULL) {
+        new_size = strlen(buf_ptr) + strlen(str);
+        str = realloc(str, (new_size + 1) * sizeof(char));
+        str = strcat(str, buf_ptr);
+        if (strchr(buf_ptr, '\n')) {
             break;
-        } 
+        }
     }
-    if (pos == 0) {
-        free(buf);
+    if (strlen(str) == 0) {
+        free(str);
         return NULL;
     }
-    buf[pos] = 0;
-    return buf;
+    return str;
 }
 
 
@@ -50,12 +44,13 @@ main (void) {
             ans = (char *)calloc(cur_length + 1, sizeof buf[0]); 
             ans[cur_length - 1] = 0;
             ans = strcpy(ans, buf);
+            max_length = cur_length;
         }
         free(buf);
         buf = get_string();
     }
     if (ans != NULL) {
-        printf("%s\n", ans);
+        printf("%s", ans);
         free(ans);
     }
     return 0;
