@@ -3,65 +3,59 @@
 #include <string.h>
 
 
-enum { START_BUF_SIZE = 2 };
-
-typedef struct {
-    char *str;
-    int length;
-} Huge_String;
-
-
-Huge_String
+char *
 get_string(void) {
-    int cnt = 0;
-    int cur_len = START_BUF_SIZE;
-    char *buf = (char *)calloc(cur_len, sizeof(char));
-    int chr = 0;
-    while ((chr != '\n') && (!feof(stdin))) {
-        chr = getc(stdin);
-        buf[cnt] = (char)chr;
-
-        //Get more memory
-        if (cnt == START_BUF_SIZE - 1) {
-            cur_len *= 2;            
-            buf = (char *)realloc(buf, cur_len * sizeof(char));
+    char *buf;
+    int length = 1;
+    buf = (char *)calloc(1, sizeof buf[0]);
+    
+    int pos = 0;
+    char chr = getc(stdin);
+    while (!(feof(stdin)) && (chr != '\n')) {
+        buf[pos] = chr;
+        if (pos == length - 1) {
+            length *= 2;
+            buf = realloc(buf, length * sizeof buf[0]);
         }
-        cnt++;
+        pos++;
+        chr = getc(stdin);
+        if ((ferror(stdin)) || (feof(stdin))) {
+            break;
+        } 
     }
-    printf("OUT!!\n");
-    buf[cnt] = 0;
-    Huge_String read_str = {NULL, 0};
-    if (cnt == 0) {
+    if (pos == 0) {
         free(buf);
-        return read_str;
+        return NULL;
     }
-    read_str.str = (char *)calloc(cnt, sizeof(char));
-    read_str.str = strcpy(read_str.str, buf);
-    read_str.length = cnt;
-    free(buf);
-    return read_str;
+    buf[pos] = 0;
+    return buf;
 }
 
 
 int
 main (void) {
+
     int max_length = 0;
-    
-    Huge_String buf;
-    char *ans;
-    while ((buf = get_string()).str != NULL) {
-        printf("READED\n");
-        if (buf.length > max_length) {
-            ans = (char *)calloc(buf.length, sizeof buf.str[0]);
-            ans = strcpy(ans, buf.str);
-            max_length = buf.length;
+    int cur_length;
+    char *ans = NULL;
+
+    char *buf = NULL; 
+    buf = get_string();
+    while (buf != NULL) {
+        cur_length = strlen(buf);
+        if (cur_length >= max_length) {
+            if (ans != NULL) {
+                free(ans);
+            }
+            ans = (char *)calloc(cur_length + 1, sizeof buf[0]); 
+            ans[cur_length - 1] = 0;
+            ans = strcpy(ans, buf);
         }
-        if (buf.length > 0) {
-            free(buf.str);
-        }
+        free(buf);
+        buf = get_string();
     }
-    if (max_length > 0) {
-        printf("%s\n", ans);    
+    if (ans != NULL) {
+        printf("%s\n", ans);
         free(ans);
     }
     return 0;
