@@ -63,7 +63,7 @@ create_list (List **list) {
     int item;
     while (scanf("%d", &item) == 1) {
         //Get memory for new element
-        new_elem = (struct List_Element *)malloc(sizeof(struct List_Element *));
+        new_elem = (struct List_Element *)malloc(sizeof(struct List_Element));
         
         
         //Initialization new element 
@@ -107,7 +107,6 @@ elem_less_100_odd(List *list, struct List_Element *cur_elem) {
         if (cur_elem->next == cur_elem) {
             free(cur_elem);
             list->first = NULL;
-            free(list);
             return NULL;
         }   
         list->first = cur_elem->next;
@@ -192,6 +191,7 @@ free_list (List *list) {
     }
     struct List_Element *head = list->first;
     if (head == NULL) {
+        free(list);
         return;
     }
 
