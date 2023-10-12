@@ -38,6 +38,10 @@ main(void) {
     while (1) {
         cur_string = get_unknown_string();
         if (cur_string == NULL) {
+            if (max_len == -1) {
+                free(max_string);
+                break;
+            }
             printf("%s", max_string);
             free(max_string);
             break;
