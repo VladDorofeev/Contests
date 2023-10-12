@@ -14,13 +14,6 @@ get_unknown_string(void){
     char *end_flag;
     *my_string = 0;
     while ((end_flag = fgets(buf, sizeof(buf), stdin)) != NULL) {
-        printf("buf = %s\n", buf);
-        ptr = strchr(buf, '\n');
-        if (ptr != NULL) {
-            *ptr = 0;
-        } else {
-            buf[BUFSIZE - 1] = 0;
-        }
         cur_len += strlen(buf);
         if (cur_len >= max_size_str) {
             max_size_str *= 5;
@@ -29,7 +22,6 @@ get_unknown_string(void){
         strcat(my_string, buf);
         ptr = strchr(my_string, '\n');
         if (ptr != NULL) {
-            *ptr = 0;
             return my_string;
         }
     }
@@ -46,7 +38,7 @@ main(void) {
     while (1) {
         cur_string = get_unknown_string();
         if (cur_string == NULL) {
-            printf("%s\n", max_string);
+            printf("%s", max_string);
             free(max_string);
             break;
         }
