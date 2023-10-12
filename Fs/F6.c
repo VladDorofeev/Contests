@@ -2,27 +2,32 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum { START_LENGTH = 4 };
 
 char *
 get_string(void) {
-    char *str= (char *)calloc(1, sizeof str[0]);
-    *str = 0;
-    int new_size;
-    static char buf[1024];
-    char *buf_ptr = &buf[0];
-    while((buf_ptr = fgets(buf_ptr, sizeof buf, stdin)) != NULL) {
-        new_size = strlen(buf_ptr) + strlen(str);
-        str = realloc(str, (new_size + 1) * sizeof(char));
-        str = strcat(str, buf_ptr);
-        if (strchr(buf_ptr, '\n')) {
+    int cur_length = START_LENGTH;
+    char *str = (char *)calloc(START_LENGTH + 1, sizeof str[0]);
+    char *start = str;
+
+    while ((fgets(str, cur_length / 2 + 1, stdin)) != NULL) {
+        if (strchr(str, '\n') != NULL) {
             break;
         }
+        if (strlen(start) == cur_length) {
+            cur_length *= 2;
+            start = (char *)realloc(start, cur_length + 1);
+            str = start + strlen(start);
+        } else {
+            str += strlen(str);
+        }
     }
-    if (strlen(str) == 0) {
-        free(str);
+    
+    if (strlen(start) == 0) {
+        free(start); 
         return NULL;
     }
-    return str;
+    return start;
 }
 
 
