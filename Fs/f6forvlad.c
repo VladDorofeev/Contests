@@ -2,15 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum {BUFSIZE = 4};
+enum {BUFSIZE = 100};
 
 char*
 get_unknown_string(void){
-    int max_size_str = 1;
+    int max_size_str = BUFSIZE;
     char buf[BUFSIZE];
     char *ptr;
     int cur_len = 0;
-    char *my_string = (char*)calloc(1, sizeof(char));
+    char *my_string = (char*)calloc(BUFSIZE, sizeof(char));
     char *end_flag;
     *my_string = 0;
     while ((end_flag = fgets(buf, sizeof(buf), stdin)) != NULL) {
