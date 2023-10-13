@@ -6,15 +6,17 @@ enum { START_BUFF_SIZE = 2 };
 int
 main (void) {
     int cur_buf = START_BUFF_SIZE;
-    int *arr;
-    arr = (int *)calloc(cur_buf, sizeof &arr);
+    int *arr = NULL;
     int cnt = 0;
-    while (scanf("%d", &arr[cnt]) == 1) {
+    int num;
+    while (scanf("%d", &num) == 1) {
+        cnt++;
         if (cnt == cur_buf - 1) {
             cur_buf *= 2;
             arr = (int *)realloc(arr, sizeof arr[0] * cur_buf);
         }
-        cnt++;
+        arr[cnt - 1] = num;
+        
     }
     cnt--;
     for (; cnt >= 0; --cnt) {
