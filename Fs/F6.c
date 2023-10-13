@@ -40,8 +40,7 @@ main (void) {
     char *ans = NULL;
 
     char *line = NULL; 
-    line = get_string();
-    while (line != NULL) {
+    while ((line = get_string()) != NULL) {
         cur_length = strlen(line);
         if (cur_length >= max_length) {
             free(ans);
@@ -51,7 +50,6 @@ main (void) {
             max_length = cur_length;
         }
         free(line);
-        line = get_string();
     }
     if (ans != NULL) {
         printf("%s", ans);
