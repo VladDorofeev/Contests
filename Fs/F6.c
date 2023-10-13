@@ -2,32 +2,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { START_LENGTH = 4 };
+enum { BUF_SIZE = 1024 };
 
 char *
 get_string(void) {
-    int cur_length = START_LENGTH;
-    char *str = (char *)calloc(START_LENGTH + 1, sizeof str[0]);
-    char *start = str;
+    char buf[BUF_SIZE];
+    int str_length = 0;
+    int str_capacity = 0;
+    char *str = NULL;
 
-    while ((fgets(str, cur_length / 2 + 1, stdin)) != NULL) {
-        if (strchr(str, '\n') != NULL) {
+    while ((fgets(buf, BUF_SIZE, stdin)) != NULL) {
+        if (str_length + strlen(buf) >= str_capacity) {
+            if (str_capacity == 0) {
+                str_capacity = BUF_SIZE * 2;
+            }
+            str_capacity *= 2;
+            str = realloc(str, str_capacity);
+            *(str + str_length) = 0;
+        }
+        strcat(str, buf);
+        
+        if (strchr(buf, '\n') != NULL) {
             break;
         }
-        if (strlen(start) == cur_length) {
-            cur_length *= 2;
-            start = (char *)realloc(start, cur_length + 1);
-            str = start + strlen(start);
-        } else {
-            str += strlen(str);
-        }
+        str_length = strlen(str);
     }
     
-    if (strlen(start) == 0) {
-        free(start); 
-        return NULL;
-    }
-    return start;
+    return str;
 }
 
 
@@ -38,21 +39,19 @@ main (void) {
     int cur_length;
     char *ans = NULL;
 
-    char *buf = NULL; 
-    buf = get_string();
-    while (buf != NULL) {
-        cur_length = strlen(buf);
+    char *line = NULL; 
+    line = get_string();
+    while (line != NULL) {
+        cur_length = strlen(line);
         if (cur_length >= max_length) {
-            if (ans != NULL) {
-                free(ans);
-            }
-            ans = (char *)calloc(cur_length + 1, sizeof buf[0]); 
+            free(ans);
+            ans = (char *)calloc(cur_length + 1, sizeof line[0]); 
             ans[cur_length - 1] = 0;
-            ans = strcpy(ans, buf);
+            ans = strcpy(ans, line);
             max_length = cur_length;
         }
-        free(buf);
-        buf = get_string();
+        free(line);
+        line = get_string();
     }
     if (ans != NULL) {
         printf("%s", ans);
