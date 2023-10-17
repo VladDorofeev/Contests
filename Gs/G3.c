@@ -32,6 +32,7 @@ main(int argc, char **argv) {
 
     //Remove temporary file and close main file
     remove("__G3__.bin");
+    fclose(temp_fp);
     fclose(fp);
     return 0;
 }
