@@ -2,11 +2,11 @@
 
 int
 main(int argc, char **argv) {
-    //Open main file and create binary temporary file
+    //Open main file and create temporary file
     FILE *fp = fopen(argv[1], "r");
-    FILE *temp_fp = fopen("__G3__.bin", "w+");
+    FILE *temp_fp = tmpfile();
     
-    //Write nums to temporary binary file from main file
+    //Write nums to temporary file from main file
     int num;
     int cnt = 0;
     while (fscanf(fp, "%d", &num) == 1) {
@@ -15,23 +15,21 @@ main(int argc, char **argv) {
     }
 
 
-    //Reopen file (temp to read, main to write)
+    //Reopen main file
     fclose(fp);
-    fclose(temp_fp);
-
     fp = fopen(argv[1], "w");
-    temp_fp = fopen("__G3__.bin", "r");
+
+    //Set pos to begin temporary file
+    fseek(temp_fp, 0, SEEK_SET);
     
     //Write to main file from end of temporary file (reversed)
     for (int i = 0; i < cnt; ++i) {
         fseek(temp_fp, (-1) * sizeof num * (i + 1), SEEK_END);
         fread(&num, sizeof num, 1, temp_fp);
         fprintf(fp, "%d ", num);
-
     }
 
     //Remove temporary file and close main file
-    remove("__G3__.bin");
     fclose(temp_fp);
     fclose(fp);
     return 0;
