@@ -1,71 +1,36 @@
 #include <stdio.h>
-#include <stdlib.h>
-
-int *
-get_nums_from_file (FILE *fp, int *length) {
-    int *nums_arr = NULL;
-    int nums_length = 0;
-    int num;
-    while (fscanf(fp, "%d", &num) == 1) {
-        nums_length++;
-        nums_arr = realloc(nums_arr, nums_length * sizeof *nums_arr);
-        nums_arr[nums_length - 1] = num;
-    }
-
-    *length = nums_length;
-    return nums_arr;
-}
-
-
-void 
-swap_item (int *arr, int pos1, int pos2) {
-    int *p_pos1 = arr + pos1;
-    int *p_pos2 = arr + pos2;
-    int temp = *p_pos1;
-    *p_pos1 = *p_pos2;
-    *p_pos2 = temp;
-}
-
-void 
-reverse_int_arr (int *arr, int length) {
-    if (arr == NULL) {
-        return;
-    }
-    for (int i = 0; i < length / 2; ++i) {
-        swap_item(arr, i, length - i - 1);
-    }
-}
-
-
-void
-write_arr_in_file (FILE *fp, int *arr, int length) {
-    if (arr == NULL) {
-        return;
-    }
-    for (int i = 0; i < length; ++i) {
-        fprintf(fp, "%d", arr[i]);
-        fprintf(fp, " ");
-    }
-}
-
 
 int
 main(int argc, char **argv) {
+
+    //Open main file and create binary temporary file
     FILE *fp = fopen(argv[1], "r");
+    FILE *temp_fp = fopen("__G3__.bin", "w+");
     
-    int nums_length;
-    int *nums_arr = get_nums_from_file(fp, &nums_length);
+    //Write nums to temporary binary file from main file
+    int num;
+    int cnt = 0;
+    while (fscanf(fp, "%d", &num) == 1) {
+        fwrite(&num, sizeof num, 1, temp_fp);
+        cnt++;
+    }
 
-
-    reverse_int_arr(nums_arr, nums_length);
-
-    //Prepare to write
+    //Write to main file from end of temporary file (reversed)
     fclose(fp);
+    fclose(temp_fp);
+
     fp = fopen(argv[1], "w");
+    temp_fp = fopen("__G3__.bin", "r");
 
-    write_arr_in_file(fp, nums_arr, nums_length);
+    for (int i = 0; i < cnt; ++i) {
+        fseek(temp_fp, (-1) * sizeof(int) * (i + 1), SEEK_END);
+        fread(&num, sizeof num, 1, temp_fp);
+        fprintf(fp, "%d ", num);
 
-    free(nums_arr);
+    }
+
+    //Remove temporary file and close main file
+    remove("__G3__.bin");
     fclose(fp);
     return 0;
 }
