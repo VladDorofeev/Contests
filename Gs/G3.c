@@ -8,10 +8,8 @@ main(int argc, char **argv) {
     
     //Write nums to temporary file from main file
     int num;
-    int cnt = 0;
     while (fscanf(fp, "%d", &num) == 1) {
         fwrite(&num, sizeof num, 1, temp_fp);
-        cnt++;
     }
 
 
@@ -19,11 +17,13 @@ main(int argc, char **argv) {
     fclose(fp);
     fp = fopen(argv[1], "w");
 
+    //Calculate how many numbers there were
+    int amount_of_nums = ftell(temp_fp) / sizeof num;
+    
     //Set pos to begin temporary file
     fseek(temp_fp, 0, SEEK_SET);
-    
     //Write to main file from end of temporary file (reversed)
-    for (int i = 0; i < cnt; ++i) {
+    for (int i = 0; i < amount_of_nums; ++i) {
         fseek(temp_fp, (-1) * sizeof num * (i + 1), SEEK_END);
         fread(&num, sizeof num, 1, temp_fp);
         fprintf(fp, "%d ", num);
