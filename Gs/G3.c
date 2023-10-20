@@ -18,7 +18,7 @@ main(int argc, char **argv) {
     fp = fopen(argv[1], "w");
 
     //Calculate how many numbers there were
-    int amount_of_nums = ftell(temp_fp) / sizeof num;
+    long amount_of_nums = ftell(temp_fp) / sizeof num;
     
     //Set pos to begin temporary file
     fseek(temp_fp, 0, SEEK_SET);
