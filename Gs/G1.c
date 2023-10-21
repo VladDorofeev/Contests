@@ -3,7 +3,7 @@
 int
 main(int argc, char **argv) {
     FILE *fp = fopen(argv[1], "r");
-
+      
     int chr;
     int cnt_str = 1;    
     while ((chr = getc(fp)) != EOF) {
