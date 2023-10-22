@@ -23,7 +23,7 @@ main(int argc, char **argv) {
     //Set pos to begin temporary file
     fseek(temp_fp, 0, SEEK_SET);
     //Write to main file from end of temporary file (reversed)
-    for (int i = 0; i < amount_of_nums; ++i) {
+    for (long i = 0; i < amount_of_nums; ++i) {
         fseek(temp_fp, (-1) * sizeof num * (i + 1), SEEK_END);
         fread(&num, sizeof num, 1, temp_fp);
         fprintf(fp, "%d ", num);
