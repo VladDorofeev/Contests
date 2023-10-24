@@ -2,22 +2,22 @@
 #include <string.h>
 #include <stdlib.h>
 
-enum { MAX_SWITCH_SIZE = 255 };
+enum { MAX_SWITCH_SIZE = 256};
 
-typedef void (*str_case) (char *);
+typedef void (*Str_Case) (char *);
 
 typedef struct{
     char *str;
-    str_case func;
-} pair;
+    Str_Case func;
+} Pair;
 
-typedef pair str_switch[MAX_SWITCH_SIZE];
+typedef const Pair Str_Switch[MAX_SWITCH_SIZE];
 
 void
-run_str_switch(str_switch _switch, char *s) {
+run_str_switch(Str_Switch _switch, char *s) {
     int i;
     for (i = 0; strlen(_switch[i].str) != 0; ++i) {
-        if (!strcmp(_switch[i].str, s)) {
+        if (strcmp(_switch[i].str, s) == 0) {
             //Found s in our cases
             if (_switch[i].func != NULL) {
                 _switch[i].func(s);
@@ -41,8 +41,9 @@ case_sub (char *s) {
 
 void
 case_default (char *s) {
-    long num;
-    if ((num = strtol(s, NULL, 10)) != 0) {
+    char *end;
+    long num = strtol(s, &end, 10);
+    if ((*end ==0) && ((int)num == num) && (strlen(s) != 0)) {
         printf("NUMBER\n");
     } else {
         printf("UNKNOWN\n");
@@ -57,7 +58,7 @@ main (int argc, char **argv) {
     argv++;
 
     
-    str_switch _switch = {
+    Str_Switch _switch = {
         {"add", case_add}, 
         {"sub", case_sub},
         {"", case_default},
