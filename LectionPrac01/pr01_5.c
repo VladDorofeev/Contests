@@ -8,7 +8,7 @@ main (int argc, char **argv) {
 
     FILE *cur_file;
     FILE *my_file = tmpfile();
-    int num;
+    int num;  
     int cnt = 0;
     for (int i = 0; i < argc; ++i) {
         cur_file = fopen(argv[i], "r");
