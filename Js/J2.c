@@ -4,7 +4,6 @@
 #include <wait.h>
 
 
-
 int
 main (int argc, char **argv) {
     int status;
@@ -16,7 +15,7 @@ main (int argc, char **argv) {
     }
     //Main process
     wait(&status);
-    
+
     if (WIFEXITED(status)) {
         printf("%d\n", WEXITSTATUS(status));
     } else if (WIFSIGNALED(status)) {
