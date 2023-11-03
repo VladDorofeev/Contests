@@ -14,7 +14,6 @@ child_proc(int f_sym, int sym) {
 int
 main (void) {
     setbuf(stdin, 0);
-    int cnt_syms = 0;
     int first_sym = fgetc(stdin);
     int sym;
     pid_t pid;
@@ -29,11 +28,8 @@ main (void) {
                 return 0;
             }
         }
-        cnt_syms++;
     }
-    for (int i = 0; i < cnt_syms; ++i) {
-        wait(NULL);
-    }
+    for (; wait(NULL) != -1;);
     printf("\n");
     return 0;
 }
