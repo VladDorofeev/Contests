@@ -14,12 +14,10 @@ do_process(const char sym, const char key) {
 int
 main(void) {
     setbuf(stdin, 0);
-    int cnt = 0;
     char first_symbol = getchar();
     int symbol;
     pid_t pid;
     while((symbol = getchar()) != EOF) {
-        cnt++;
         if ((pid = fork()) == 0) {
             do_process((char)symbol, first_symbol);
             exit(0);
@@ -31,8 +29,7 @@ main(void) {
             }
         }
     }
-    for (int i = 0; i < cnt; ++i) {
-        wait(NULL);
+    while(wait(NULL) != -1) {
     }
     printf("\n");
     return 0;
