@@ -23,13 +23,17 @@ main (void) {
             off_t pos_wr = lseek(fd_write, 0, SEEK_CUR);
             
             //Stop one char before fd_read
-            while (pos_wr - lseek(fd_read, 0, SEEK_CUR) == 1) {
+            while (lseek(fd_read, 0, SEEK_CUR) - pos_wr == 1) {
+                usleep(1000);
+            }
+            while (pos_wr - lseek(fd_read, 0, SEEK_CUR) == 32) {
                 usleep(1000);
             }
 
             if (pos_wr == 32) {
                 lseek(fd_write, 0, SEEK_SET);
-            } 
+            }
+
             write(fd_write, &input, 1);
         }
         close(fd_write);
@@ -50,7 +54,8 @@ main (void) {
 
             if (pos_rd == 32) {
                 lseek(fd_read, 0, SEEK_SET);
-            } 
+                pos_rd = 0;
+            }
 
             read(fd_read, &output, 1);
             printf("%c", output);
