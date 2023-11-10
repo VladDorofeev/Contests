@@ -11,7 +11,8 @@
 int 
 main (void) {
     char temp_name[7] = "XXXXXX";
-    mkstemp(temp_name);
+    int temp_fd = mkstemp(temp_name);
+    close(temp_fd);
     int fd_write = open(temp_name, O_WRONLY);
     int fd_read = open(temp_name, O_RDONLY);
     unlink(temp_name);
@@ -58,7 +59,7 @@ main (void) {
             }
 
             read(fd_read, &output, 1);
-            printf("%c", output);
+            write(1, &output, 1);
         }
     }
 }
