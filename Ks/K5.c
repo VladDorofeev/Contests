@@ -5,14 +5,29 @@
 
 enum { BUF_SIZE = 1024 };
 
+char get_c(int fd) {
+    static char buf[BUF_SIZE + 1];
+    static int pos = 0;
+    static int cnt_readed_byte = 0;
+    if (pos == cnt_readed_byte) {
+        pos = 0;
+    }
+    if (pos == 0) {
+        cnt_readed_byte = read(fd, buf, BUF_SIZE);
+        if (cnt_readed_byte == 0) {
+            return 0;
+        }
+    }
+    
+    return buf[pos++];
+}
+
 int 
 main (int argc, char **argv) {
-    argc--;
-    argv++;
-    if (argc < 1) {
+    if (argc < 2) {
         return 0;
     }
-    char *file_name = *argv;
+    char *file_name = argv[1];
     int fd = open(file_name, O_RDONLY);
 
     if (fd == -1) {
@@ -23,62 +38,32 @@ main (int argc, char **argv) {
     int temp_fd = mkstemp(temp_name);
     unlink(temp_name);
 
+    char sym;
+    while ((sym = get_c(fd)) != 0) {
+        write(temp_fd, &sym, 1);
+        if (sym == '\n') {
+            break;
+        }
+    }
+    while ((sym = get_c(fd)) != 0) {
+        if (sym == '\n') {
+            break;
+        }
+    }
+    while ((sym = get_c(fd)) != 0) {
+        write(temp_fd, &sym, 1);
+    }
+
+    close(fd);
+    fd = open(argv[1], O_WRONLY | O_TRUNC);
+    lseek(temp_fd, 0, SEEK_SET);
     static char buf[BUF_SIZE + 1];
+    size_t cnt_readed_byte = 0;
 
-    int cnt_readed_byte = 0;
-    char *pos_end_first_str;
-    //Read first str and write it to temp file
-    do {
-        write(temp_fd, buf, cnt_readed_byte);
-        cnt_readed_byte = read(fd, buf, BUF_SIZE);
-        *(buf + cnt_readed_byte) = 0;
-    } while (!(((pos_end_first_str = strchr(buf, '\n')) != NULL) || (cnt_readed_byte == 0)));
-
-    //All file is one string without \n
-    if (cnt_readed_byte == 0) {
-        return 0;
+    while ((cnt_readed_byte = read(temp_fd, buf, BUF_SIZE)) != 0) {
+        write(fd, buf, cnt_readed_byte);
     }
     
-    //Write end of first str
-    write(temp_fd, buf, pos_end_first_str - buf + 1);
-
-    //Find end of second str
-    char *pos_end_second_str = strchr(pos_end_first_str + 1, '\n');
-
-    if (pos_end_second_str != NULL) {
-        //Write file after second str
-        write(temp_fd, pos_end_second_str + 1, (buf + strlen(buf)) - pos_end_second_str - 1);
-    } else {
-        //Skipping second str
-        do {
-            cnt_readed_byte = read(fd, buf, BUF_SIZE);
-            *(buf + cnt_readed_byte) = 0;
-        } while (!(((pos_end_second_str = strchr(buf, '\n')) != NULL) || (cnt_readed_byte == 0)));
-
-        //Write file after second str
-        write(temp_fd, pos_end_second_str + 1, (buf + strlen(buf)) - pos_end_second_str -1);
-    }
-
-    //Copy file after second str
-    cnt_readed_byte = 0;
-    do {
-        write(temp_fd, buf, cnt_readed_byte);
-        cnt_readed_byte = read(fd, buf, BUF_SIZE);
-        *(buf + cnt_readed_byte) = 0;
-    } while (cnt_readed_byte != 0);
-
-    //Rewrite file without second str (from temp file)
-    lseek(temp_fd, 0, SEEK_SET);
-    close(fd);
-    fd = open(file_name, O_WRONLY | O_TRUNC);
-    cnt_readed_byte = 0;
-    do {
-        write(fd, buf, cnt_readed_byte);
-        cnt_readed_byte = read(temp_fd, buf, BUF_SIZE);
-        *(buf + cnt_readed_byte) = 0;
-    } while (cnt_readed_byte != 0);
-
-
     close(fd);
     close(temp_fd);
     return 0;
