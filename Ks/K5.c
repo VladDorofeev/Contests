@@ -5,7 +5,8 @@
 
 enum { BUF_SIZE = 1024 };
 
-char get_c(int fd) {
+int
+get_c(int fd, char *sym) {
     static char buf[BUF_SIZE + 1];
     static int pos = 0;
     static int cnt_readed_byte = 0;
@@ -19,7 +20,10 @@ char get_c(int fd) {
         }
     }
     
-    return buf[pos++];
+    *sym = buf[pos++];
+    
+
+    return 1;
 }
 
 int 
@@ -39,27 +43,36 @@ main (int argc, char **argv) {
     unlink(temp_name);
 
     char sym;
-    while ((sym = get_c(fd)) != 0) {
+
+    //Get first line
+    while (get_c(fd, &sym) != 0) {
         write(temp_fd, &sym, 1);
         if (sym == '\n') {
             break;
         }
     }
-    while ((sym = get_c(fd)) != 0) {
+
+    //Skip second line
+    while (get_c(fd, &sym) != 0) {
         if (sym == '\n') {
             break;
         }
     }
-    while ((sym = get_c(fd)) != 0) {
+
+    //Write down file after second line
+    while (get_c(fd, &sym) != 0) {
         write(temp_fd, &sym, 1);
     }
 
     close(fd);
     fd = open(argv[1], O_WRONLY | O_TRUNC);
     lseek(temp_fd, 0, SEEK_SET);
+
+
     static char buf[BUF_SIZE + 1];
     size_t cnt_readed_byte = 0;
 
+    //Copy temp file to main file
     while ((cnt_readed_byte = read(temp_fd, buf, BUF_SIZE)) != 0) {
         write(fd, buf, cnt_readed_byte);
     }
