@@ -43,15 +43,24 @@ main (int argc, char **argv) {
     unlink(temp_name);
 
     char sym;
+    static char buf[BUF_SIZE + 1];
+    size_t buf_pos = 0;
 
     //Get first line
     while (get_c(fd, &sym) != 0) {
-        write(temp_fd, &sym, 1);
+        buf[buf_pos++] = sym;
+        if (buf_pos == BUF_SIZE) {
+            write(temp_fd, &buf, buf_pos);
+            buf_pos = 0;
+        }
         if (sym == '\n') {
             break;
         }
     }
-
+    if (buf_pos != 0) {
+        write(temp_fd, &buf, buf_pos);
+        buf_pos = 0;
+    }
     //Skip second line
     while (get_c(fd, &sym) != 0) {
         if (sym == '\n') {
@@ -61,7 +70,15 @@ main (int argc, char **argv) {
 
     //Write down file after second line
     while (get_c(fd, &sym) != 0) {
-        write(temp_fd, &sym, 1);
+        buf[buf_pos++] = sym;
+        if (buf_pos == BUF_SIZE) {
+            write(temp_fd, &buf, buf_pos);
+            buf_pos = 0;
+        }
+    }
+    if (buf_pos != 0) {
+        write(temp_fd, &buf, buf_pos);
+        buf_pos = 0;
     }
 
     close(fd);
@@ -69,9 +86,8 @@ main (int argc, char **argv) {
     lseek(temp_fd, 0, SEEK_SET);
 
 
-    static char buf[BUF_SIZE + 1];
-    size_t cnt_readed_byte = 0;
 
+    size_t cnt_readed_byte = 0;
     //Copy temp file to main file
     while ((cnt_readed_byte = read(temp_fd, buf, BUF_SIZE)) != 0) {
         write(fd, buf, cnt_readed_byte);
