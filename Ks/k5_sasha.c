@@ -1,51 +1,73 @@
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <string.h>
 #include <stdlib.h>
-enum {BUF_SIZE = 500};
+#define EOF -1
+enum {BUF_SIZE = 4096};
+
+
+int
+my_fgetc(int my_file) {
+    static char buffer[BUF_SIZE];
+    static int pos_buf;
+    static int cnt_sym;
+    if (pos_buf == cnt_sym) {
+        pos_buf = 0;
+        if ((cnt_sym = read(my_file, buffer, BUF_SIZE)) == 0) {
+            return EOF;
+        }
+    }
+    pos_buf++;
+    return buffer[pos_buf - 1];
+}
 
 
 int
 main(int argc, char *argv[]) {
-    int file = open(argv[1], O_RDONLY | O_CREAT, 0666);
+    int file = open(argv[1], O_RDONLY);
     char template[10] = "tmpXXXXXX";
     int tmp_file = mkstemp(template);
     unlink(template);
-    char ch_arr[BUF_SIZE + 1];
-    char *ptr;
+    char ch_arr[BUF_SIZE];
+    int cur_sym;
     int cnt_symbols;
-    int cnt = 0;
-    while((cnt_symbols = read(file, &ch_arr, BUF_SIZE)) > 0) {
-        ch_arr[cnt_symbols] = 0;
-        ptr = ch_arr;
-        if (!cnt) {
-            ptr = strchr(ch_arr, '\n');
-            if (ptr != NULL) {
-                cnt = 1;
-                write(tmp_file, ch_arr, (int)(ptr - ch_arr + 1));
-            } else {
-                write(tmp_file, ch_arr, strlen(ch_arr));
-            }
-            ptr++;
-        }   
-        if (cnt == 1) {
-            while((ptr = (strchr(ptr, '\n'))) != NULL) {
-                cnt = 2;
-                ptr++;
-                write(tmp_file, ptr, strlen(ptr));
-                break;
-            }
-            if (cnt == 2) {
-                continue;
-            }
-        } else if (cnt == 2) {
-            write(tmp_file, ch_arr, strlen(ch_arr));
+    int pos_arr = 0;
+    //write first string
+    while((cur_sym = my_fgetc(file)) != EOF) {
+        if (pos_arr == BUF_SIZE) {
+            write(tmp_file, ch_arr, pos_arr);
+            pos_arr = 0;
+        }
+        ch_arr[pos_arr] = cur_sym;
+        pos_arr++;
+        if (cur_sym == '\n') {
+            break;
         }
     }
+    if (pos_arr != 0) {
+        write(tmp_file, ch_arr, pos_arr);
+    }
+    //skip second string
+    while((cur_sym = my_fgetc(file)) != EOF) {
+        if (cur_sym == '\n') {
+            break;
+        }
+    }
+    //write other strings
+    pos_arr = 0;
+    while((cur_sym = my_fgetc(file)) != EOF) {
+        if (pos_arr == BUF_SIZE) {
+            write(tmp_file, ch_arr, pos_arr);
+            pos_arr = 0;
+        }
+        ch_arr[pos_arr] = cur_sym;
+        pos_arr++;
+    }
+    if (pos_arr != 0) {
+        write(tmp_file, ch_arr, pos_arr);
+    }
     close(file);
-    file = open(argv[1], O_WRONLY | O_TRUNC, 0666);
+    //write strings from tmp_file
+    file = open(argv[1], O_WRONLY | O_TRUNC);
     lseek(tmp_file, 0, SEEK_SET);
     while((cnt_symbols = read(tmp_file, &ch_arr, BUF_SIZE)) > 0) {
         write(file, ch_arr, cnt_symbols);
