@@ -20,7 +20,7 @@ main (int argc, char **argv) {
         close(fd2[0]);
         close(fd2[1]);
 
-        execlp("grep", "grep", "^[a-zA-Z0-9_]*(.*)", (char *)NULL);
+        execlp("grep", "grep", "^[a-zA-Z0-9_]*(", (char *)NULL);
     }
     if (fork() == 0) {
         dup2(fd1[0], STDIN_FILENO);
