@@ -1,95 +1,60 @@
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-enum
-{
-    BUF_SIZE = 10000,
-    GETVAL = 0,
-    SETVAL = 1,
-};
-
-typedef struct Element {
-    int value;
-    int id;
-} Element;
-
-typedef union Argument {
-    int number;
-    int *pointer;
-} Argument;
-
-static Element data[BUF_SIZE];
-
-int
-command(int id, int cmd, Argument arg)
-{
-    Element *temp = NULL;
-    for (int i = 0; i < BUF_SIZE; ++i) {
-        if (data[i].id == id) {
-            temp = &data[i];
-            break;
-        }
-    }
-    if (temp == NULL) {
-        return 1;
-    }
-    if (cmd == SETVAL) {
-        temp->value = arg.number;
-    } else if (cmd == GETVAL) {
-        *arg.pointer = temp->value;
-    } else {
-        return 2;
-    }
-    return 0;
-}
-
-int
-insert_to_buff(int i, int id, int value)
-{
-    if (i >= BUF_SIZE) {
-        return 1;
-    }
-    data[i].id = id;
-    data[i].value = value;
-    return 0;
-}
 
 int
 main(void)
 {
-    for (int i = 0; i < BUF_SIZE; ++i) {
-        data[i].value = 0;
-        data[i].id = 0;
-    }
-    
-    int i, id, value, d;
+    int fd[2];
+    int fd_2[2];
+    pipe(fd);
+    pipe(fd_2);
 
-    if (scanf("%d%d%d", &i, &id, &value) != 3) {
-        return 1;
-    }
-    if (insert_to_buff(i, id, value) == 1) {
-        return 1;
-    }
-    if (scanf("%d%d%d", &i, &id, &value) != 3) {
-        return 1;
-    }
-    if (insert_to_buff(i, id, value) == 1) {
-        return 1;
-    }
-    if (scanf("%d", &d) != 1) {
-        return 1;
-    }
+    size_t int_s = sizeof(int);
 
-    int loc;
-    Argument arg;
-    arg.pointer = &loc;
+    if (fork() == 0) {
+        //pipe_1[read]
+        //pipe_2[write]
+        dup2(fd[0], STDIN_FILENO);
+        dup2(fd_2[1], STDOUT_FILENO);
 
-    if (command(d, GETVAL, arg)) {
-        printf("NONE\n");
+        close(fd[0]);
+        close(fd[1]);
+        close(fd_2[0]);
+        close(fd_2[1]);
+
+        int num;
+        while(read(STDIN_FILENO, &num, int_s) == int_s) {
+            write(STDOUT_FILENO, &num, int_s);
+        }
         return 0;
     }
-    arg.number = *arg.pointer + 1;
-    command(d, SETVAL, arg);
-    printf("%d\n", arg.number);
+    
+    int num = 1;
+
+    //Unused pipe
+    close(fd[0]);
+    close(fd_2[1]);
+
+    //Write to process A
+    write(fd[1], &num, int_s);
+    close(fd[1]);
+
+
+    sleep(1);
+
+
+    //Read from process A
+    read(fd_2[0], &num, int_s);
+    printf("main num = %d\n", num);
+    close(fd_2[0]);
+
+
+    while(wait(NULL) != -1);
     return 0;
 }
