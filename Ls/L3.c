@@ -52,8 +52,3 @@ main (int argc, char **argv) {
     while (wait(NULL) != -1);
     return 0;
 }
-/*
-grep \ \(.*\)\ \{ test1.c | cut -d\( -f1
-
-grep \ \(.*\)\ \{ test1.c | cut -d\( -f1 | sort
-*/
