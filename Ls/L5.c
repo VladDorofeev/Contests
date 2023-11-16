@@ -16,7 +16,7 @@ process_a(void) {
 
     //Read and write 2 nums
     while ((cnt_readed_byte = read(STDIN_FILENO, &buf_input[0], 
-        2 * sizeof(int))) == 2 * sizeof(int)) {
+            2 * sizeof(int))) == 2 * sizeof(int)) {
         buf_output[0] = buf_input[0] + buf_input[1];
         buf_output[1] = buf_input[0] - buf_input[1];
         write(STDOUT_FILENO, &buf_output[0], 2 * sizeof(int));
@@ -24,12 +24,18 @@ process_a(void) {
 }
 
 void
-process_son(int fd_read, int fd_write, int num1, int num2) {
+process_son(int fd_read, int fd_write, int num1, int num2,
+            int locker_r, int locker_w) {
     //Send to process A and get from process A two nums, then print it
     int buf[2];
     buf[0] = num1; 
     buf[1] = num2;
 
+    //Check process a is available and lock it
+    char temp;
+    read(locker_r, &temp, 1);
+
+    //Critical section start
     write(fd_write, &buf[0], 2 * sizeof(int));
     close(fd_write);
 
@@ -37,6 +43,13 @@ process_son(int fd_read, int fd_write, int num1, int num2) {
 
     read(fd_read, &buf[0], 2 * sizeof(int));
     close(fd_read);
+    //Critical section end
+
+    //Unlock process a
+    write(locker_w, &temp, 1);
+
+    close(locker_r);
+    close(locker_w);
 
     printf("%d %d %d %d\n", num1, num2, buf[0], buf[1]);
 
@@ -70,6 +83,12 @@ main (void) {
 
     pid_t pid;
     int num1, num2;
+    int locker[2];
+    pipe(locker);
+    
+    //Unlock process a
+    char temp = 'V';
+    write(locker[1], &temp, 1);
 
     while (scanf("%d%d", &num1, &num2) == 2) {
         while ((pid = fork()) == -1) {
@@ -77,11 +96,13 @@ main (void) {
         }
 
         if (pid == 0) {
-            process_son(from_a[0], to_a[1], num1, num2);
+            process_son(from_a[0], to_a[1], num1, num2, locker[0], locker[1]);
             return 0;
         }
-        wait(NULL);
     }
+
+    close(locker[0]);
+    close(locker[1]);
 
     close(from_a[0]);
     close(to_a[1]);
@@ -90,27 +111,3 @@ main (void) {
 
     return 0;
 }
-
-
-
-/*
-    if (fork() == 0) {
-        process_son(from_a[0], to_a[1], num1, num2);
-    }
-*/
-/*
-
-    write(to_a[1], &num1, sizeof(int));
-    write(to_a[1], &num2, sizeof(int));
-
-    close(to_a[1]);
-
-    int num3, num4;
-
-    read(from_a[0], &num3, sizeof(int));
-    read(from_a[0], &num4, sizeof(int));
-
-    close(from_a[0]);
-
-    printf("main nums = %d %d\n", num3, num4);
-*/
