@@ -9,47 +9,37 @@
 #include <string.h>
 
 int fd;
-int can_work = 0; //zero means file available 
+static pid_t pids[1000];
+int cnt_sons = 0;
+pid_t p_pid;
 
 void
-process_inc (void) {
+critical_section (int sig) {
     int num;
-
-    //Wait another process
-    while (1) {
-        if (can_work == 0) {
-            //Block all process
-            kill(0, SIGUSR1);
-            can_work = 1;
-            break;
-        }
-    }
-
-    //Critical section start
     read(fd, &num, sizeof(int));
     num++;
+    
     lseek(fd, 0, SEEK_SET);
+
     write(fd, &num, sizeof(int));
     lseek(fd, 0, SEEK_SET);
-    //Critical section end
 
-    //Unblock all process
-    kill(0, SIGUSR2);
+    kill(p_pid, SIGUSR2);
+    
+    _exit(0);
 }
 
 void
-block_process (int sig) {
-    can_work += 1;
+new_process (int sig) {
+    static int length = 0;
+    if (length < cnt_sons) {
+        kill(pids[length++], SIGUSR1);
+    }
 }
-
-void
-unblock_process (int sig) {
-    can_work -= 1;
-}
-
 
 int
 main (int argc, char **argv) {
+    p_pid = getpid();
     char temp_name[] = "tempXXXXXX";
     fd = mkstemp(temp_name);
     unlink(temp_name);
@@ -60,22 +50,25 @@ main (int argc, char **argv) {
 
     int n;
     scanf("%d", &n);
-
-    signal(SIGUSR1, SIG_IGN);
-    signal(SIGUSR2, SIG_IGN);
+    
+    signal(SIGUSR1, critical_section);
+    signal(SIGUSR2, new_process);
 
     pid_t pid;
     for (int i = 0; i < n; ++i) {
-        if (fork() == 0) {
-            signal(SIGUSR1, block_process);
-            signal(SIGUSR2, unblock_process);
-            process_inc();
-            signal(SIGUSR1, SIG_IGN);
-            signal(SIGUSR2, SIG_IGN);
+        while ((pid = fork()) == -1) {
+            wait(NULL);
+        }
+        if (pid == 0) {
+            while(1) {
+                usleep(10000);
+            }
             return 0;
         }
+        pids[cnt_sons++] = pid;
+        
     }
-
+    raise(SIGUSR2);
 
     while (wait(NULL) != -1);
 
@@ -85,13 +78,3 @@ main (int argc, char **argv) {
 
     return 0;
 }
-
-
-/*
-    //Critical section start
-    read(fd, &num, sizeof(int));
-    num++;
-    lseek(fd, 0, SEEK_SET);
-    write(fd, &num, sizeof(int));
-    //Critical section end
-*/
