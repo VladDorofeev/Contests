@@ -9,7 +9,7 @@
 #include <string.h>
 
 int fd;
-pid_t pids[1001];
+pid_t pids[10000];
 int cnt_sons = 0;
 pid_t p_pid;
 
@@ -31,7 +31,9 @@ void
 new_process (int sig) {
     static int pos = 0;
     if (pos < cnt_sons) {
-        kill(pids[pos++], SIGUSR1);
+        kill(pids[pos], SIGUSR1);
+        kill(pids[pos], SIGCONT);
+        pos++;
     }
 }
 
@@ -58,16 +60,12 @@ main (int argc, char **argv) {
             wait(NULL);
         }
         if (pid == 0) {
-            while(1) {
-                usleep(1000);
-            }
+            raise(SIGSTOP);
             return 0;
         }
         pids[cnt_sons++] = pid;
-        if (i == 0) {
-            raise(SIGUSR2);
-        }
     }
+    raise(SIGUSR2);
 
     while (wait(NULL) != -1);
 
