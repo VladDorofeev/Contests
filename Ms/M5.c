@@ -9,31 +9,29 @@
 #include <string.h>
 
 int fd;
-static pid_t pids[1000];
+pid_t pids[1001];
 int cnt_sons = 0;
 pid_t p_pid;
 
 void
 critical_section (int sig) {
     int num;
+
     read(fd, &num, sizeof(int));
     num++;
-    
     lseek(fd, 0, SEEK_SET);
-
     write(fd, &num, sizeof(int));
     lseek(fd, 0, SEEK_SET);
 
     kill(p_pid, SIGUSR2);
-    
     _exit(0);
 }
 
 void
 new_process (int sig) {
-    static int length = 0;
-    if (length < cnt_sons) {
-        kill(pids[length++], SIGUSR1);
+    static int pos = 0;
+    if (pos < cnt_sons) {
+        kill(pids[pos++], SIGUSR1);
     }
 }
 
@@ -48,12 +46,12 @@ main (int argc, char **argv) {
     write(fd, &num, sizeof(int));
     lseek(fd, 0, SEEK_SET);
 
-    int n;
-    scanf("%d", &n);
-    
     signal(SIGUSR1, critical_section);
     signal(SIGUSR2, new_process);
 
+    int n;
+    scanf("%d", &n);
+    
     pid_t pid;
     for (int i = 0; i < n; ++i) {
         while ((pid = fork()) == -1) {
@@ -61,14 +59,15 @@ main (int argc, char **argv) {
         }
         if (pid == 0) {
             while(1) {
-                usleep(10000);
+                usleep(1000);
             }
             return 0;
         }
         pids[cnt_sons++] = pid;
-        
+        if (i == 0) {
+            raise(SIGUSR2);
+        }
     }
-    raise(SIGUSR2);
 
     while (wait(NULL) != -1);
 
