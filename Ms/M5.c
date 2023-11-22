@@ -7,9 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int fd;
-pid_t pids[1000];
+pid_t pids[10000000];
 int cnt_sons = 0;
 int pos = 0;
 pid_t p_pid;
@@ -33,8 +34,6 @@ void
 new_process (int sig) {
     if (pos < cnt_sons) {
         kill(pids[pos++], SIGCONT);
-        //Can got signal from son
-        waitpid(pids[pos - 1], 0, 0);
     }
 }
 
@@ -58,25 +57,41 @@ main (int argc, char **argv) {
     
     pid_t pid;
     for (int i = 0; i < n; ++i) {
-        pid = fork();
+        while ((pid = fork()) == -1) {
+            usleep(100);
+
+            //check working sons
+            pid_t pid_wait = waitpid(-1, 0, WNOHANG);
+            if (pid_wait == 0) {
+                //Haven`t working child
+                raise(SIGUSR2);
+            } 
+        }
         if (pid == 0) {
             raise(SIGTSTP);
             return 0;
         }
         pids[cnt_sons++] = pid;
+
+        if (i == 0) {
+            raise(SIGUSR2);
+        }
     }
 
-    raise(SIGUSR2);
+    //waiting all sons
+    int sleep_result;
+    while (pos != cnt_sons) {
+        sleep_result = usleep(100);
+        if (sleep_result == 0) {
+            //Not interrupted => no working child
+            raise(SIGUSR2);
+        }
+    }
+
     while (wait(NULL) != -1);
 
     read(fd, &num, sizeof(int));
     close(fd);
     printf("%d\n", num);
-
     return 0;
 }
-/*
-        while ((pid = fork()) == -1) {
-            raise(SIGUSR2);
-        }
-*/
