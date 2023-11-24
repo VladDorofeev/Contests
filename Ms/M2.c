@@ -7,13 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum { DELAY_TIME = 50, NUM_SIG = '5' };
+
+int need_print = 0;
+char to_print[2] = {'0', '\n'};
+
 void 
 sig_hndl(int sig) {
-    static int cnt_sig = 1;
-    printf("%d\n", cnt_sig);
-    if (cnt_sig++ == 5) {
-        exit(0);
-    }
+    need_print++;
 }
 
 int
@@ -22,17 +23,20 @@ main (void) {
     signal(SIGINT, sig_hndl);
     if ((pid = fork()) == 0) {
         while(1) {
-            usleep(500);
+            usleep(1000);
+            if (need_print--) {
+                to_print[0]++;
+                write(1, to_print, 2);
+            }
+            if (to_print[0] == NUM_SIG) {
+                exit(0);
+            }
         }
     }
     signal(SIGINT, SIG_DFL);
     for (int i = 0; i < 5; ++i) {
-        if (waitpid(-1, NULL, WNOHANG) == 0) {
-            kill(pid, SIGINT);
-            usleep(50);
-        } else {
-            break;
-        }
+        kill(pid, SIGINT);
+        usleep(DELAY_TIME);
     }
     wait(NULL);
     return 0;
