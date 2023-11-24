@@ -5,13 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int cnt;
+int happens = 0;
+char buf_print[2] = "0\n";
+
 void
 sig_hndlr(int sig) {
-    static int cnt;
-    printf("%d\n", ++cnt);
-    if (cnt == 5) {
-        exit(0);
-    }
+    buf_print[0]++;
 }
 
 int
@@ -20,16 +20,20 @@ main(void) {
     signal(SIGINT, sig_hndlr);
     if ((pid = fork()) == 0) {
         while(1) {
-            usleep(500);
+            if (buf_print[0] < '6') {
+                write(1, buf_print, 2 * sizeof(char));
+                if (buf_print[0] == '5') {
+                    exit(0);
+                }
+            }
+            usleep(1000);
         }
     } else {
-        while(1) {
+        for (int i = 0; i < 5; ++i) {
             kill(pid, SIGINT);
-            if (waitpid(-1, NULL, WNOHANG) != 0) {
-                break;
-            }
             usleep(50);
         }
+        wait(NULL);
     }
     return 0;
 }
