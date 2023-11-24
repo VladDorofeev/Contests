@@ -8,6 +8,71 @@
 #include <stdlib.h>
 #include <string.h>
 
+enum { SEC_TO_ALARM = 5 };
+
+char *num;
+char *save_num;
+
+/*
+char *
+dec (char *num) {
+    size_t length = strlen(num);
+    int need_dec = 1;
+    for (size_t i = length - 1;; --i) {
+        if (!need_dec) {
+            break;
+        }
+        if (num[i] == '0') {
+            num[i] = '9';
+        } else {
+            need_dec = 0;
+            num[i] -= 1;
+        }
+    }
+    char *ptr;
+    for (ptr = num; *ptr == '0'; ptr++);
+    if (*ptr == 0) {
+        ptr--;
+    }
+    return ptr;
+}
+*/
+
+void
+sig_alrm (int sig) {
+    write(1, save_num, strlen(save_num));
+    printf("\n");
+    alarm(SEC_TO_ALARM);
+}
+
+void
+sig_int (int sig) {
+    unsigned int to_alarm = alarm(0);
+    write(1, &to_alarm, sizeof(unsigned int));
+    alarm(to_alarm);
+}
+
+
+int
+main (int argc, char **argv) {
+    num = argv[1];
+    save_num = malloc(strlen(num) + 1);
+
+    signal(SIGALRM, sig_alrm);
+    signal(SIGINT, sig_int);
+
+    alarm(SEC_TO_ALARM);
+
+    while (*num != '0') {
+        save_num = strcpy(save_num, num);
+        num = dec(num);
+    }
+
+    free(save_num);
+    return 0;
+}
+
+
 /*
     Задача: 
         Получить ооогромное число и уменьшить его до 0.
@@ -59,108 +124,12 @@
                 т.к. неизвестна реализация dec, размер числа)
                 1.4) Распечатать число сразу после 
                 завершения преобразования
+                (не подходит под условие задачи)
+                1.5) Сохранять значение числа перед вычислением 
+                и печатать его.
 
-            Я выбрал вариант 1.4 как самый надежный и правильный.
+            Я выбрал вариант 1.5 как самый надежный и правильный.
 
-            Чтобы реализовать 1.4 пришлось использовать 
-            две глобальных переменных is_calc, need_print.
-
-            В то время как происходят вычисления is_calc == 1 (см. main)
-            Если в это время приходит сигнал SIGALRM, 
-            то он проверяет этот флаг.
-
-            В обработчике SIGALRM:
-            Если is_calc == 1, то значит печатать число нельзя, 
-                делаем need_print = 1.
-                После выхода из обработчика сигнала, 
-                завершается выполнение dec, 
-                возвращаемся в main, там проверяем значение need_print.
-                Если need_print == 1, то печатаем число и опускаем флаг, 
-                иначе идем на следующую итерацию.
-            Если is_calc == 0, то значит число обработано 
-            и можно печатать, печатаем.
-
-            P.S.
-            Это решение верно, если функция dec отрабатывает 
-            не более чем 5 секунд, иначе
-            два сигнала SIGALRM поднимут флаг need_print дважды, 
-            но распечатается число лишь один раз, вместо двух. 
+            Чтобы реализовать 1.5 пришлось использовать 
+            глобальную переменную-строку - копию исходного числа.
 */
-
-
-enum { SEC_TO_ALARM = 5 };
-
-char *num;
-
-int is_calc = 0;
-int need_print = 0;
-
-/*
-char *
-dec (char *num) {
-    size_t length = strlen(num);
-    int need_dec = 1;
-    for (size_t i = length - 1;; --i) {
-        if (!need_dec) {
-            break;
-        }
-        if (num[i] == '0') {
-            num[i] = '9';
-        } else {
-            need_dec = 0;
-            num[i] -= 1;
-        }
-    }
-    char *ptr;
-    for (ptr = num; *ptr == '0'; ptr++);
-    if (*ptr == 0) {
-        ptr--;
-    }
-    return ptr;
-}
-*/
-
-void
-sig_alrm (int sig) {
-    if (!is_calc) {
-        //printf("%s\n", num); Why doesn`t printf work?
-        write(1, num, strlen(num));
-        printf("\n");
-    } else {
-        need_print = 1;
-    }
-    alarm(SEC_TO_ALARM);
-}
-
-void
-sig_int (int sig) {
-    unsigned int to_alarm = alarm(0);
-    alarm(to_alarm);
-    printf("%d\n", to_alarm);
-}
-
-
-int
-main (int argc, char **argv) {
-    num = argv[1];
-
-    signal(SIGALRM, sig_alrm);
-    signal(SIGINT, sig_int);
-
-    alarm(SEC_TO_ALARM);
-
-    while (*num != '0') {
-        is_calc = 1;
-        num = dec(num);
-        is_calc = 0;
-
-        if (need_print == 1) {
-            write(1, num, strlen(num));
-            printf("\n");
-            need_print = 0;
-        }
-
-    }
-
-    return 0;
-}
