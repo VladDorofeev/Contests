@@ -58,7 +58,8 @@ son_process (char *filename, int N, int type) {
             semop(s_semid, &s0_d, 1);
 
             printf("%d\n", i);
-
+            fflush(stdout);
+            
             //Up semaphor[1]
             semop(s_semid, &s1_u, 1);
         }
@@ -68,7 +69,8 @@ son_process (char *filename, int N, int type) {
             semop(s_semid, &s1_d, 1);
 
             printf("%d\n", i);
-            
+            fflush(stdout);
+
             //Up semaphor[0]
             semop(s_semid, &s0_u, 1);
         }
