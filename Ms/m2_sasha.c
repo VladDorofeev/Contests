@@ -2,16 +2,17 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 
+enum {COUNT_SIGNALS = 5, LAST_SIGNAL = '5', WATING_TIME = 50};
+
 int cnt;
-int happens = 0;
 char buf_print[2] = "0\n";
+int hapens_count = 0;
 
 void
 sig_hndlr(int sig) {
-    buf_print[0]++;
+    hapens_count++;
 }
 
 int
@@ -20,18 +21,19 @@ main(void) {
     signal(SIGINT, sig_hndlr);
     if ((pid = fork()) == 0) {
         while(1) {
-            if (buf_print[0] < '6') {
+            usleep(100);
+            if (hapens_count--) {//if several signals come nearly simultaneously
+                buf_print[0]++;  //to this process, it will do all of them
                 write(1, buf_print, 2 * sizeof(char));
-                if (buf_print[0] == '5') {
+                if (buf_print[0] == LAST_SIGNAL) {
                     exit(0);
                 }
             }
-            usleep(1000);
         }
     } else {
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < COUNT_SIGNALS; ++i) {
             kill(pid, SIGINT);
-            usleep(50);
+            usleep(WATING_TIME);
         }
         wait(NULL);
     }
