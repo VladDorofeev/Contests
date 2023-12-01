@@ -26,10 +26,15 @@ sig_hndl2(int sig) {
 int
 main (void) {
     if ((pid = fork()) == 0) {
-        signal(SIGINT, sig_hndl);
-        while(1);
+        sleep(10);
+        return 0;
     }
-    signal(SIGINT, sig_hndl2);
-    wait(NULL);
+    sleep(1);
+    pid_t stat = waitpid(pid, 0, WNOHANG);
+    if (stat == 0) {
+        printf("return 0\n");
+    } else {
+        printf("%d\n", stat);
+    }
     return 0;
 }
