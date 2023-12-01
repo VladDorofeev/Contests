@@ -12,6 +12,8 @@ enum { SEC_TO_ALARM = 5 };
 
 char *num;
 char *save_num;
+char *num_to_print;
+int do_strcpy;
 
 /*
 char *
@@ -40,7 +42,7 @@ dec (char *num) {
 
 void
 sig_alrm (int sig) {
-    write(1, save_num, strlen(save_num));
+    write(1, num, strlen(num_to_print));
     printf("\n");
     alarm(SEC_TO_ALARM);
 }
@@ -64,7 +66,9 @@ main (int argc, char **argv) {
     alarm(SEC_TO_ALARM);
 
     while (*num != '0') {
+        num_to_print = num;    
         save_num = strcpy(save_num, num);
+        num_to_print = save_num;        
         num = dec(num);
     }
 
