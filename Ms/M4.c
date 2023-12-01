@@ -15,7 +15,6 @@ char *save_num;
 char *num_to_print;
 int do_strcpy;
 
-/*
 char *
 dec (char *num) {
     size_t length = strlen(num);
@@ -38,7 +37,6 @@ dec (char *num) {
     }
     return ptr;
 }
-*/
 
 void
 sig_alrm (int sig) {
@@ -50,7 +48,10 @@ sig_alrm (int sig) {
 void
 sig_int (int sig) {
     unsigned int to_alarm = alarm(0);
+    to_alarm += '0';
     write(1, &to_alarm, sizeof(unsigned int));
+    printf("\n");
+    to_alarm -= '0';
     alarm(to_alarm);
 }
 
