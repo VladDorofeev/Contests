@@ -10,7 +10,7 @@
 #include <errno.h>
 
 int fd;
-pid_t pids[10000000];
+pid_t pids[1001];
 int cnt_sons = 0;
 int pos = 0;
 pid_t p_pid;
@@ -40,6 +40,7 @@ new_process (int sig) {
 
 int
 main (int argc, char **argv) {
+    setbuf(stdout, 0);
     p_pid = getpid();
     char temp_name[] = "tempXXXXXX";
     fd = mkstemp(temp_name);
@@ -67,8 +68,11 @@ main (int argc, char **argv) {
                 raise(SIGUSR2);
             } 
         }
+
         if (pid == 0) {
-            raise(SIGTSTP);
+            while(1) {
+                usleep(1000);
+            }
             return 0;
         }
         pids[cnt_sons++] = pid;
@@ -78,14 +82,20 @@ main (int argc, char **argv) {
         }
     }
 
-    //waiting all sons
+    //Waiting all sons
     int sleep_result;
+    pid_t stat;
     while (pos != cnt_sons) {
-        sleep_result = usleep(100);
+        sleep_result = usleep(10000);
         if (sleep_result == 0) {
-            //Not interrupted => no working child
-            raise(SIGUSR2);
-        }
+            //Check is son working?
+            stat = waitpid(pids[pos - 1], 0, WNOHANG);
+            if ((stat != 0) && (stat != -1)) {
+                //Not interrupted and not working
+                raise(SIGUSR2);
+            }
+        }  //Else sleep was interrupted
+        //=> sons working, just wait
     }
 
     while (wait(NULL) != -1);
