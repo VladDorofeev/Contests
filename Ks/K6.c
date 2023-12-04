@@ -43,7 +43,7 @@ main (void) {
     close(temp_fd);
     int fd_write = open(temp_name, O_WRONLY);
     int fd_read = open(temp_name, O_RDONLY);
-    unlink(temp_name);
+    //unlink(temp_name);
 
 
     if (fork() == 0) {

@@ -18,7 +18,7 @@ pid_t p_pid;
 void
 critical_section (int sig) {
     int num;
-
+    printf("pid in son %d",getpid());
     read(fd, &num, sizeof(int));
     num++;
     lseek(fd, 0, SEEK_SET);
@@ -33,7 +33,8 @@ critical_section (int sig) {
 void
 new_process (int sig) {
     if (pos < cnt_sons) {
-        kill(pids[pos++], SIGCONT);
+        printf("pid in son %d", pids[pos++]);
+        kill(pids[pos], SIGCONT);
     }
 }
 
