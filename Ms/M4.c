@@ -12,8 +12,9 @@ enum { SEC_TO_ALARM = 5 };
 
 char *num;
 char *save_num;
+char *num_to_print;
+int do_strcpy;
 
-/*
 char *
 dec (char *num) {
     size_t length = strlen(num);
@@ -36,11 +37,10 @@ dec (char *num) {
     }
     return ptr;
 }
-*/
 
 void
 sig_alrm (int sig) {
-    write(1, save_num, strlen(save_num));
+    write(1, num, strlen(num_to_print));
     printf("\n");
     alarm(SEC_TO_ALARM);
 }
@@ -48,7 +48,10 @@ sig_alrm (int sig) {
 void
 sig_int (int sig) {
     unsigned int to_alarm = alarm(0);
+    to_alarm += '0';
     write(1, &to_alarm, sizeof(unsigned int));
+    printf("\n");
+    to_alarm -= '0';
     alarm(to_alarm);
 }
 
@@ -64,7 +67,9 @@ main (int argc, char **argv) {
     alarm(SEC_TO_ALARM);
 
     while (*num != '0') {
+        num_to_print = num;    
         save_num = strcpy(save_num, num);
+        num_to_print = save_num;        
         num = dec(num);
     }
 
