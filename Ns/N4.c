@@ -54,7 +54,7 @@ client (char *filename, int N) {
     cmd.msg = SHUT_DOWN;
     msgsnd(msgid_send, &cmd, sizeof(int), 0);
     
-    _exit(0);
+    exit(0);
 }
 void 
 server (char *filename, int N) {
@@ -85,7 +85,7 @@ server (char *filename, int N) {
             break;
         case SHUT_DOWN:
             //Shut down the work
-            _exit(0);
+            exit(0);
         default:
             break;
         }
@@ -116,11 +116,9 @@ main (int argc, char **argv) {
 
     if (fork() == 0) {
         server(argv[0], N);
-        return 0;
     }
     if (fork() == 0) {
         client(argv[0], N);
-        return 0;
     }
 
     wait(NULL);
