@@ -18,58 +18,113 @@ struct msgbuf
     int msg;
 };
 
-enum { CREATE_SERVER = 0 }; 
+//Max num of client
 enum { MAX_SEQ_LEN = 100 };
+
+//Type of message to create server
+enum { CREATE_SERVER = 1 }; 
+
+//Command to server
+enum { INC_NUM = 1, RET_NUM = 2, SHUT_DOWN = 3 };
 
 void 
 client (char *filename, int N) {
-    pid_t client_pid;
-    printf("client pid = %d, his n = %d\n", client_pid, N);
+    pid_t client_pid = getpid();
 
     key_t key = ftok(filename, 'a');
     int msgid = msgget(key, 0666);
 
-
-    struct msgbuf msg;
-    msg.type = CREATE_SERVER;
-    msg.msg = client_pid;
+    //Send request to create server
+    struct msgbuf msg = {CREATE_SERVER, client_pid};
     msgsnd(msgid, &msg, sizeof(int), 0);
-    printf("client: req to create server sended\n");
 
+    //Recieve server pid
     msgrcv(msgid, &msg, sizeof(int), client_pid, 0);
-    printf("client: server pid = %d\n", msg.msg);
+    pid_t server_pid = msg.msg;
 
+    //Send to server N command to increase num
+    msg.type = client_pid;
+    msg.msg = INC_NUM;
+    for (int i = 0; i < N; i++) {
+        msgsnd(msgid, &msg, sizeof(int), 0);
+    }   
 
-    printf("client %d going stop\n", client_pid);
+    //Get num from server
+    msg.msg = RET_NUM;
+    msgsnd(msgid, &msg, sizeof(int), 0);
+    msgrcv(msgid, &msg, sizeof(int), server_pid, 0);
+
+    printf("%d\n", msg.msg);
+
+    //Close server
+    msg.type = getpid(); 
+    msg.msg = SHUT_DOWN;
+    msgsnd(msgid, &msg, sizeof(int), 0);
+
+    //Waiting answer that server closed
+    msgrcv(msgid, &msg, sizeof(int), server_pid, 0);
+    
     exit(0);
 }
 
 void 
 server (char *filename, pid_t client_pid) {
-    sleep(5);
-    exit(0);
+    int num = 0;
+
+    key_t key = ftok(filename, 'a');
+    int msgid = msgget(key, 0666);
+
+    //Two messages for send num and receive command
+    struct msgbuf msg;
+
+    while (1) {
+        //Receive command from client
+        msgrcv(msgid, &msg, sizeof(int), client_pid, 0);
+        switch (msg.msg)
+        {
+        case INC_NUM:
+            //Increase num
+            num++;
+            break;
+        case RET_NUM:
+            //Send current num to client
+            msg.type = getpid();
+            msg.msg = num;
+            msgsnd(msgid, &msg, sizeof(int), 0);
+            break;
+        case SHUT_DOWN:
+            //Shut down the work
+            msg.type = getpid();
+            msg.msg = SHUT_DOWN;
+            msgsnd(msgid, &msg, sizeof(int), 0);
+            exit(0);
+        default:
+            break;
+        }
+    }
 }
 
 void
 registrator(char *filename) {
-    printf("reg: start\n");
     key_t key = ftok(filename, 'a');
     int msgid = msgget(key, 0666);
-    if (msgid == -1) {
-        printf("reg: msgid broken\n");
-    }
+
     struct msgbuf msg;
     pid_t client_pid;
     pid_t server_pid;
     while (1) {
-        printf("reg: in a cycle\n");
         //Get request to create server from client
         msgrcv(msgid, &msg, sizeof(int), CREATE_SERVER, 0);
+        
+        //If main send message to stop registrator
+        if (msg.msg == 0) {
+            exit(0);
+        }
+
         client_pid = msg.msg;
-        printf("reg: msg rcv from %d\n", client_pid);
 
         //Create server with client pid
-        if ((server_pid = fork()) == 0) { ///////////////////////////////////////////
+        if ((server_pid = fork()) == 0) { 
             server(filename, client_pid);
         }
 
@@ -77,7 +132,6 @@ registrator(char *filename) {
         msg.type = client_pid;
         msg.msg = server_pid;
         msgsnd(msgid, &msg, sizeof(int), 0);
-        printf("reg: msg send to %d with server %d\n", client_pid, server_pid);
     }
 }
 
@@ -105,24 +159,23 @@ main (int argc, char **argv) {
         return 0;
     }
 
-    static int sons_n[MAX_SEQ_LEN];
-    int cnt_n;
-    for (cnt_n = 0; scanf("%d", &sons_n[cnt_n]) != -1; cnt_n++);
-
-    for (int i = 0; i < cnt_n; i++) {
+    int N; 
+    int cnt_clients;
+    for (cnt_clients = 0; scanf("%d", &N) != -1; cnt_clients++) {
         if (fork() == 0) {////////////////////////////////////////////////////////////
-            client(argv[0], sons_n[i]);
+            client(argv[0], N);
             return 0;
         }
-    }    
+    }
 
     //Waiting all clients
-    for (int i = 0; i < cnt_n; i++) {
+    for (int i = 0; i < cnt_clients; i++) {
         wait(NULL);
     } 
 
     //Stop registrator
-    kill(reg_pid, SIGKILL);
+    struct msgbuf msg = {CREATE_SERVER, 0};
+    msgsnd(msgid, &msg, sizeof(int), 0);
     wait(NULL);
 
     msgctl(msgid, IPC_RMID, NULL);
