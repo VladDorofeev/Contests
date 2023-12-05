@@ -18,9 +18,6 @@ struct msgbuf
     int msg;
 };
 
-//Max num of client
-enum { MAX_SEQ_LEN = 100 };
-
 //Type of message to create server
 enum { CREATE_SERVER = 1 }; 
 
@@ -118,13 +115,17 @@ registrator(char *filename) {
         
         //If main send message to stop registrator
         if (msg.msg == 0) {
+            while (wait(NULL) != -1);
             exit(0);
         }
 
         client_pid = msg.msg;
 
         //Create server with client pid
-        if ((server_pid = fork()) == 0) { 
+        while ((server_pid = fork()) == -1) {
+            wait(NULL);
+        }
+        if (server_pid == 0) { 
             server(filename, client_pid);
         }
 
@@ -161,8 +162,13 @@ main (int argc, char **argv) {
 
     int N; 
     int cnt_clients;
+    pid_t client_pid;
     for (cnt_clients = 0; scanf("%d", &N) != -1; cnt_clients++) {
-        if (fork() == 0) {////////////////////////////////////////////////////////////
+        while ((client_pid = fork()) == -1) {
+            wait(NULL);
+            cnt_clients--;
+        }
+        if (client_pid == 0) {
             client(argv[0], N);
             return 0;
         }
