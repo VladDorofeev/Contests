@@ -120,6 +120,7 @@ run_redirect(Command *c) {
 
     if (fork() == 0) {
         close(pipe_fd[0]);
+
         dup2(fd, stream);
         close(fd);
 
@@ -127,15 +128,15 @@ run_redirect(Command *c) {
 
         write(pipe_fd[1], &status_rd_cmd, sizeof(int));
         close(pipe_fd[1]);
-        return 0;
+        exit(0);
     }
+    close(fd);
     close(pipe_fd[1]);
     wait(NULL);
 
     int status;
     read(pipe_fd[0], &status, sizeof(int));
     close(pipe_fd[0]);
-    close(fd);
     
     return status;
 }
@@ -149,30 +150,94 @@ run_pipeline(Command *c) {
         return status;
     }
     
+    int exit_code[2];
+    pipe(exit_code);
+
     int fd[2];
     pipe(fd);
 
+/*
+            dup2(fd[0], STDIN_FILENO);
+            dup2(fd[1], STDOUT_FILENO); ////////////////////////////////////DON`T WORKING/////////////////////////////////////////////////////////////////
+            close(fd[0]);
+            close(fd[1]);
+*/
+    pid_t cmd_pid;
+    for (int i = 0; i < c->pipeline_size; i++) {
+        if ((cmd_pid = fork()) == 0) {
 
-    //wait(&status);
+            printf("prog %d start\n", i);
+            if (i != 0) {
+                printf("prog %d change stdin\n", i);
+                dup2(fd[0], STDIN_FILENO);
+            }
+            if (i != c->pipeline_size - 1) {
+                dup2(fd[1], STDOUT_FILENO);
+                printf("prog %d change stdout\n", i);
+            }
+
+            close(fd[0]);
+            close(fd[1]);
+
+            status = run_command(&(c->pipeline_commands[i]));
+            printf("prog %d end his command\n", i);
+
+            //Get exit code, if last command
+            if (i == c->pipeline_size - 1){
+               write(exit_code[1], &status, sizeof(int));
+            }
+            close(exit_code[0]);
+            close(exit_code[1]);
+            
+            printf("prog %d going done\n", i);
+            exit(0);
+        }
+        printf("go next cmd %d\n", getpid());
+    }
+
     close(fd[0]);
     close(fd[1]);
+
+    read(exit_code[0], &status, sizeof(int));
+    close(exit_code[0]);
+    close(exit_code[1]);
+
+    while (wait(NULL) != -1);
+
     return status;
 }
 
 int
 run_seq1(Command *c) {
     int status;
+    pid_t cmd_pid;
+    
+    int fd[2];
+    pipe(fd);
+
     for (int i = 0; i < c->seq_size; i++) {
-        if (fork() == 0) {
-            run_command(&(c->seq_commands[i]));
+        if ((cmd_pid = fork()) == 0) {
+            status = run_command(&(c->seq_commands[i]));
+            if (i == c->seq_size - 1) {
+                write(fd[1], &status, sizeof(int));
+            }
+            close(fd[0]);
+            close(fd[1]);
             exit(0);
-        } 
-        ///////////////////////////////NEED GET A EXIT CODE////////////////////////////////////
+        }
+
         if (c->seq_operations[i] == OP_SEQ) {
-            wait(&status);
+            waitpid(cmd_pid, 0, 0);
         }
     }
-    wait(&status);
+
+    while (wait(NULL) != -1);
+
+    read(fd[0], &status, sizeof(int));
+    
+    close(fd[0]);
+    close(fd[1]);
+
     return status;
 }
 
@@ -205,24 +270,36 @@ run_command(Command *c) {
 int
 main(void)
 {
+    setbuf(stdout, 0);
     Command uname = {
         .kind = KIND_SIMPLE,
         .argc = 1,
         .argv = (char *[]){"./123", 0},
     };
-    Command seq = {
-        .kind = KIND_SEQ1,
-        .seq_size = 3,
-        .seq_operations = (int []) {OP_SEQ, OP_SEQ, OP_SEQ},
-        .seq_commands = (Command []) {uname, uname, uname},
-    };
     Command rdcmd = {
         .kind = KIND_REDIRECT,
         .rd_command = &uname,
-        .rd_mode = RD_OUTPUT,
+        .rd_mode = RD_OUTPUT, 
         .rd_path = "file.txt",
     };
-    run_command(&rdcmd);
+    Command echo = {
+        .kind = KIND_SIMPLE,
+        .argc = 1,
+        .argv = (char *[]){"echo", "123", 0},
+    };
+    Command cat = {
+        .kind = KIND_SIMPLE,
+        .argc = 1,
+        .argv = (char *[]){"cat", 0},
+    };
+
+    Command pipe = {
+        .kind = KIND_PIPELINE,
+        .pipeline_size = 3,
+        .pipeline_commands = (Command []){echo, cat, cat},
+        
+    };
+    printf("ret code = %d\n", run_command(&pipe)); //////////////DEADLOCK PIPE WITH >2 COMMANDS////////////////////
 }
 
 /*
