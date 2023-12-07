@@ -153,34 +153,30 @@ run_pipeline(Command *c) {
     int exit_code[2];
     pipe(exit_code);
 
-    int fd[2];
-    pipe(fd);
-
-/*
-            dup2(fd[0], STDIN_FILENO);
-            dup2(fd[1], STDOUT_FILENO); ////////////////////////////////////DON`T WORKING/////////////////////////////////////////////////////////////////
-            close(fd[0]);
-            close(fd[1]);
-*/
+    int **pipes = calloc(c->pipeline_size, sizeof *pipes);
+    for (int i = 0; i < c->pipeline_size; i++) {
+        pipes[i] = calloc(2, sizeof(int));
+        pipe(pipes[i]);
+    }
+    
     pid_t cmd_pid;
     for (int i = 0; i < c->pipeline_size; i++) {
-        if ((cmd_pid = fork()) == 0) {
-
-            printf("prog %d start\n", i);
+        if (fork() == 0) {
             if (i != 0) {
-                printf("prog %d change stdin\n", i);
-                dup2(fd[0], STDIN_FILENO);
+                dup2(pipes[i - 1][0], STDIN_FILENO);
             }
             if (i != c->pipeline_size - 1) {
-                dup2(fd[1], STDOUT_FILENO);
-                printf("prog %d change stdout\n", i);
+                dup2(pipes[i][1], STDOUT_FILENO);
             }
 
-            close(fd[0]);
-            close(fd[1]);
+            for (int i = 0; i < c->pipeline_size; i++) {
+                close(pipes[i][0]);
+                close(pipes[i][1]);
+                free(pipes[i]);
+            }
+            free(pipes);
 
             status = run_command(&(c->pipeline_commands[i]));
-            printf("prog %d end his command\n", i);
 
             //Get exit code, if last command
             if (i == c->pipeline_size - 1){
@@ -189,18 +185,21 @@ run_pipeline(Command *c) {
             close(exit_code[0]);
             close(exit_code[1]);
             
-            printf("prog %d going done\n", i);
             exit(0);
         }
-        printf("go next cmd %d\n", getpid());
     }
 
-    close(fd[0]);
-    close(fd[1]);
+    for (int i = 0; i < c->pipeline_size; i++) {
+        close(pipes[i][0]);
+        close(pipes[i][1]);
+        free(pipes[i]);
+    }
+    free(pipes);
 
     read(exit_code[0], &status, sizeof(int));
     close(exit_code[0]);
     close(exit_code[1]);
+
 
     while (wait(NULL) != -1);
 
@@ -271,14 +270,19 @@ int
 main(void)
 {
     setbuf(stdout, 0);
-    Command uname = {
+    Command first = {
         .kind = KIND_SIMPLE,
         .argc = 1,
-        .argv = (char *[]){"./123", 0},
+        .argv = (char *[]){"./1", 0},
+    };
+    Command second = {
+        .kind = KIND_SIMPLE,
+        .argc = 1,
+        .argv = (char *[]){"./2", 0},
     };
     Command rdcmd = {
         .kind = KIND_REDIRECT,
-        .rd_command = &uname,
+        .rd_command = &first,
         .rd_mode = RD_OUTPUT, 
         .rd_path = "file.txt",
     };
@@ -295,8 +299,8 @@ main(void)
 
     Command pipe = {
         .kind = KIND_PIPELINE,
-        .pipeline_size = 3,
-        .pipeline_commands = (Command []){echo, cat, cat},
+        .pipeline_size = 8,
+        .pipeline_commands = (Command []){first, second, second, second, second, second, second, second},
         
     };
     printf("ret code = %d\n", run_command(&pipe)); //////////////DEADLOCK PIPE WITH >2 COMMANDS////////////////////
