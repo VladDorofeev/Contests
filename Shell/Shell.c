@@ -145,13 +145,26 @@ int
 run_pipeline(Command *c) {
     int status;
 
+
+    int exit_code[2];
+    pipe(exit_code);
+
     if (c->pipeline_size == 1) {
-        status = run_simple(c->pipeline_commands);
+
+        if (fork() == 0) {
+            status = run_command(c->pipeline_commands);
+            write(exit_code[1], &status, sizeof(int));
+            close(exit_code[0]);
+            close(exit_code[1]);
+            exit(0);
+        }
+
+        read(exit_code[0], &status, sizeof(int));
+        close(exit_code[0]);
+        close(exit_code[1]);
         return status;
     }
     
-    int exit_code[2];
-    pipe(exit_code);
 
     int **pipes = calloc(c->pipeline_size, sizeof *pipes);
     for (int i = 0; i < c->pipeline_size; i++) {
@@ -159,7 +172,6 @@ run_pipeline(Command *c) {
         pipe(pipes[i]);
     }
     
-    pid_t cmd_pid;
     for (int i = 0; i < c->pipeline_size; i++) {
         if (fork() == 0) {
             if (i != 0) {
@@ -169,10 +181,10 @@ run_pipeline(Command *c) {
                 dup2(pipes[i][1], STDOUT_FILENO);
             }
 
-            for (int i = 0; i < c->pipeline_size; i++) {
-                close(pipes[i][0]);
-                close(pipes[i][1]);
-                free(pipes[i]);
+            for (int j = 0; j < c->pipeline_size; j++) {
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+                free(pipes[j]);
             }
             free(pipes);
 
@@ -180,7 +192,7 @@ run_pipeline(Command *c) {
 
             //Get exit code, if last command
             if (i == c->pipeline_size - 1){
-               write(exit_code[1], &status, sizeof(int));
+                write(exit_code[1], &status, sizeof(int));
             }
             close(exit_code[0]);
             close(exit_code[1]);
@@ -242,6 +254,66 @@ run_seq1(Command *c) {
 
 int
 run_seq2(Command *c) {
+    int status;
+    pid_t cmd_pid;
+    
+    int cmd_exit = 0;
+    int need_run = 1;
+
+    int fd[2];
+    pipe(fd);
+
+    for (int i = 0; i < c->seq_size; i++) {
+        if (need_run) {
+            if ((cmd_pid = fork()) == 0) {
+                status = run_command(&(c->seq_commands[i]));
+                write(fd[1], &status, sizeof(int));
+                close(fd[0]);
+                close(fd[1]);
+                exit(0);
+            }
+        }
+
+        wait(NULL);
+
+        if (need_run) {
+            read(fd[0], &status, sizeof(int));
+            if ((WIFEXITED(status)) && (WEXITSTATUS(status) == 0)) {
+                cmd_exit = 0;
+            } else {
+                cmd_exit = 1;
+            }
+        }
+
+
+        switch (c->seq_operations[i])
+        {
+        case OP_CONJUNCT:
+            if (cmd_exit == 0) {
+                need_run = 1;
+            } else {
+                need_run = 0;
+            }
+            break;
+        case OP_DISJUNCT:
+            if (cmd_exit == 1) {
+                need_run = 1;
+            } else {
+                need_run = 0;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    while (wait(NULL) != -1);
+
+    
+    close(fd[0]);
+    close(fd[1]);
+
+    return status;
     return 0;
 }
 
@@ -266,61 +338,24 @@ run_command(Command *c) {
     return 0;
 }
 
+
+
+
 int
 main(void)
 {
-    setbuf(stdout, 0);
-    Command first = {
-        .kind = KIND_SIMPLE,
-        .argc = 1,
-        .argv = (char *[]){"./1", 0},
-    };
-    Command second = {
-        .kind = KIND_SIMPLE,
-        .argc = 1,
-        .argv = (char *[]){"./2", 0},
-    };
-    Command rdcmd = {
-        .kind = KIND_REDIRECT,
-        .rd_command = &first,
-        .rd_mode = RD_OUTPUT, 
-        .rd_path = "file.txt",
-    };
-    Command echo = {
-        .kind = KIND_SIMPLE,
-        .argc = 1,
-        .argv = (char *[]){"echo", "123", 0},
-    };
-    Command cat = {
-        .kind = KIND_SIMPLE,
-        .argc = 1,
-        .argv = (char *[]){"cat", 0},
-    };
-
-    Command pipe = {
-        .kind = KIND_PIPELINE,
-        .pipeline_size = 8,
-        .pipeline_commands = (Command []){first, second, second, second, second, second, second, second},
-        
-    };
-    printf("ret code = %d\n", run_command(&pipe)); //////////////DEADLOCK PIPE WITH >2 COMMANDS////////////////////
-}
-
-/*
-// command "uname"
-
+    // command "uname"
     Command c1_1_1 = {
         .kind = KIND_SIMPLE,
         .argc = 1,
-        .argv = (char *[]){"echo", "1", "2", "3", 0}
+        .argv = (char *[]){"uname", 0}
     };
     Command c1_1 = {
-        .kind = KIND_REDIRECT,
-        .rd_mode = RD_APPEND,
-        .rd_path = "file.txt",
-        .rd_command = &c1_1_1
+        .kind = KIND_PIPELINE,
+        .pipeline_size = 1,
+        .pipeline_commands = &c1_1_1,
     };
-    run_command(&c1_1_1);
+    //run_command(&c1_1);
 
     // command "echo 1 2 3 > file && wc < file &"
 
@@ -368,7 +403,7 @@ main(void)
         .seq_commands = &c2,
         .seq_operations = (int []){OP_BACKGROUND},
     };
-    run_command(&c2_0);
+    //run_command(&c2_0);
 
     // command "echo 1 2 3 | wc"
 
@@ -377,7 +412,7 @@ main(void)
         .pipeline_size = 2,
         .pipeline_commands = (Command []) {c2_1_1_1, c2_2_1_1}
     };
-    run_command(&c3);
+    //run_command(&c3);
 
     // command "echo 1 >> file || echo 2 >> file && cat file"
     Command c4_1_1_1 = {
@@ -428,7 +463,7 @@ main(void)
         .seq_commands = (Command []) {c4_1, c4_2, c4_3},
         .seq_operations = (int []){OP_DISJUNCT, OP_CONJUNCT},
     };
-    run_command(&c4);
+    //run_command(&c4);
 
     // command "echo 1 2 3 | wc > file; cat file"
     Command c5_1_1 = {
@@ -448,7 +483,7 @@ main(void)
         .seq_commands = (Command []) {c5_1, c4_3},
         .seq_operations = (int []){OP_SEQ, OP_SEQ},
     };
-    run_command(&c5);
+    //run_command(&c5);
 
     // command "echo 1 || (echo 2 && echo 3)"
     Command c6_1 = {
@@ -506,7 +541,7 @@ main(void)
         .pipeline_size = 2,
         .pipeline_commands = (Command []) {c7_1, c7_2},
     };
-    run_command(&c7);
-
-
-*/
+    //run_command(&c7);
+    
+    return 0;
+}
