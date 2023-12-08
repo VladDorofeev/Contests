@@ -27,9 +27,9 @@ struct msgbuf
 void 
 client (char *filename, int N) {
     key_t key = ftok(filename, 'a');
-    int msgid_send = msgget(key, 0666);
+    int msgid_send = msgget(key, 0);
     key = ftok(filename, 'b');
-    int msgid_recieve = msgget(key, 0666);
+    int msgid_recieve = msgget(key, 0);
 
 
     //Send N command to increase num in a server
@@ -61,9 +61,9 @@ server (char *filename, int N) {
     int num = 0;
 
     key_t key = ftok(filename, 'a');
-    int msgid_recieve = msgget(key, 0666);
+    int msgid_recieve = msgget(key, 0);
     key = ftok(filename, 'b');
-    int msgid_send = msgget(key, 0666);
+    int msgid_send = msgget(key, 0);
 
     //Two messages for send num and receive command
     struct msgbuf cmd;
