@@ -84,13 +84,8 @@ run_command(Command *);
 
 int
 run_simple(Command *c) {
-    int status;
-    if (fork() == 0) {
-        execvp(c->argv[0], c->argv);
-        exit(0);
-    }
-    wait(&status);
-    return status;
+    execvp(c->argv[0], c->argv);
+    return 0;
 }
 
 int
@@ -115,139 +110,88 @@ run_redirect(Command *c) {
         break;
     }
 
-    int pipe_fd[2];
-    pipe(pipe_fd);
 
-    if (fork() == 0) {
-        close(pipe_fd[0]);
-
-        dup2(fd, stream);
-        close(fd);
-
-        int status_rd_cmd = run_command(c->rd_command);
-
-        write(pipe_fd[1], &status_rd_cmd, sizeof(int));
-        close(pipe_fd[1]);
-        exit(0);
-    }
+    dup2(fd, stream);
     close(fd);
-    close(pipe_fd[1]);
-    wait(NULL);
-
-    int status;
-    read(pipe_fd[0], &status, sizeof(int));
-    close(pipe_fd[0]);
+    run_command(c->rd_command);
     
-    return status;
+    return 0;
 }
 
-int
+pid_t
 run_pipeline(Command *c) {
-    int status;
-
-
+    pid_t pid = 0;
     int exit_code[2];
     pipe(exit_code);
 
     if (c->pipeline_size == 1) {
-
-        if (fork() == 0) {
-            status = run_command(c->pipeline_commands);
-            write(exit_code[1], &status, sizeof(int));
-            close(exit_code[0]);
-            close(exit_code[1]);
+        if ((pid = fork()) == 0) {
+            run_command(c->pipeline_commands);
             exit(0);
         }
-
-        read(exit_code[0], &status, sizeof(int));
-        close(exit_code[0]);
-        close(exit_code[1]);
-        return status;
+        return pid;
     }
     
+    int pipe_1[2];
+    int pipe_2[2];
 
-    int **pipes = calloc(c->pipeline_size, sizeof *pipes);
+    pipe(pipe_1);
+    pipe(pipe_2);
+
     for (int i = 0; i < c->pipeline_size; i++) {
-        pipes[i] = calloc(2, sizeof(int));
-        pipe(pipes[i]);
-    }
-    
-    for (int i = 0; i < c->pipeline_size; i++) {
-        if (fork() == 0) {
+        if (i % 2 == 0) {
+            if (i != 0){
+                close(pipe_1[0]);
+                close(pipe_1[1]);
+                pipe(pipe_1);
+            }
+        } else {
+            close(pipe_2[0]);
+            close(pipe_2[1]);
+            pipe(pipe_2);
+        }
+        if ((pid = fork()) == 0) {
             if (i != 0) {
-                dup2(pipes[i - 1][0], STDIN_FILENO);
+                dup2(i % 2 == 0 ? pipe_2[0] : pipe_1[0], STDIN_FILENO);
             }
             if (i != c->pipeline_size - 1) {
-                dup2(pipes[i][1], STDOUT_FILENO);
+                dup2(i % 2 == 0 ? pipe_1[1] : pipe_2[1], STDOUT_FILENO);
             }
+        
+            close(pipe_1[0]);
+            close(pipe_1[1]);
+            close(pipe_2[0]);
+            close(pipe_2[1]);
 
-            for (int j = 0; j < c->pipeline_size; j++) {
-                close(pipes[j][0]);
-                close(pipes[j][1]);
-                free(pipes[j]);
-            }
-            free(pipes);
-
-            status = run_command(&(c->pipeline_commands[i]));
-
-            //Get exit code, if last command
-            if (i == c->pipeline_size - 1){
-                write(exit_code[1], &status, sizeof(int));
-            }
-            close(exit_code[0]);
-            close(exit_code[1]);
-            
+            run_command(&(c->pipeline_commands[i]));
             exit(0);
         }
+
     }
-
-    for (int i = 0; i < c->pipeline_size; i++) {
-        close(pipes[i][0]);
-        close(pipes[i][1]);
-        free(pipes[i]);
-    }
-    free(pipes);
-
-    read(exit_code[0], &status, sizeof(int));
-    close(exit_code[0]);
-    close(exit_code[1]);
-
-
-    while (wait(NULL) != -1);
-
-    return status;
+    close(pipe_1[0]);
+    close(pipe_1[1]);
+    close(pipe_2[0]);
+    close(pipe_2[1]);
+    return pid;
 }
 
 int
 run_seq1(Command *c) {
     int status;
     pid_t cmd_pid;
-    
-    int fd[2];
-    pipe(fd);
 
     for (int i = 0; i < c->seq_size; i++) {
-        if ((cmd_pid = fork()) == 0) {
-            status = run_command(&(c->seq_commands[i]));
-            if (i == c->seq_size - 1) {
-                write(fd[1], &status, sizeof(int));
+        status = 0;
+        cmd_pid = run_command(&(c->seq_commands[i]));
+        
+        if (c->seq_commands[i].kind != KIND_SEQ2) {
+            if (c->seq_operations[i] == OP_SEQ) {
+                waitpid(cmd_pid, &status, 0);
             }
-            close(fd[0]);
-            close(fd[1]);
-            exit(0);
-        }
-
-        if (c->seq_operations[i] == OP_SEQ) {
-            waitpid(cmd_pid, 0, 0);
-        }
+        } else {
+            status = cmd_pid;
+        } 
     }
-
-    while (wait(NULL) != -1);
-
-    read(fd[0], &status, sizeof(int));
-    
-    close(fd[0]);
-    close(fd[1]);
 
     return status;
 }
@@ -260,24 +204,13 @@ run_seq2(Command *c) {
     int cmd_exit = 0;
     int need_run = 1;
 
-    int fd[2];
-    pipe(fd);
-
     for (int i = 0; i < c->seq_size; i++) {
         if (need_run) {
-            if ((cmd_pid = fork()) == 0) {
-                status = run_command(&(c->seq_commands[i]));
-                write(fd[1], &status, sizeof(int));
-                close(fd[0]);
-                close(fd[1]);
-                exit(0);
-            }
+            cmd_pid = run_command(&(c->seq_commands[i]));
         }
 
-        wait(NULL);
-
         if (need_run) {
-            read(fd[0], &status, sizeof(int));
+            waitpid(cmd_pid, &status, 0);
             if ((WIFEXITED(status)) && (WEXITSTATUS(status) == 0)) {
                 cmd_exit = 0;
             } else {
@@ -307,14 +240,7 @@ run_seq2(Command *c) {
         }
     }
 
-    while (wait(NULL) != -1);
-
-    
-    close(fd[0]);
-    close(fd[1]);
-
     return status;
-    return 0;
 }
 
 
@@ -338,8 +264,12 @@ run_command(Command *c) {
     return 0;
 }
 
+int
+main(void) {
+    return 0;
+}
 
-
+/*
 
 int
 main(void)
@@ -405,12 +335,12 @@ main(void)
     };
     //run_command(&c2_0);
 
-    // command "echo 1 2 3 | wc"
+    // command "echo 1 2 3 | wc | wc | wc | wc"
 
     Command c3 = {
         .kind = KIND_PIPELINE,
-        .pipeline_size = 2,
-        .pipeline_commands = (Command []) {c2_1_1_1, c2_2_1_1}
+        .pipeline_size = 5,
+        .pipeline_commands = (Command []) {c2_1_1_1, c2_2_1_1, c2_2_1_1, c2_2_1_1, c2_2_1_1}
     };
     //run_command(&c3);
 
@@ -523,7 +453,7 @@ main(void)
         .seq_commands = (Command []) {c6_1, c6_2},
         .seq_operations = (int []) {OP_DISJUNCT},
     };
-    run_command(&c6);
+    //run_command(&c6);
 
     // command "yes | head"
     Command c7_1 = {
@@ -542,6 +472,6 @@ main(void)
         .pipeline_commands = (Command []) {c7_1, c7_2},
     };
     //run_command(&c7);
-    
     return 0;
 }
+*/
