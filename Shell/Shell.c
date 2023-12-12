@@ -85,7 +85,7 @@ run_command(Command *);
 int
 run_simple(Command *c) {
     execvp(c->argv[0], c->argv);
-    return 0;
+    exit(1);
 }
 
 int
@@ -184,12 +184,19 @@ run_seq1(Command *c) {
         status = 0;
         cmd_pid = run_command(&(c->seq_commands[i]));
         
+        if (c->seq_commands == NULL) {
+            break;
+        }
+
         if (c->seq_commands[i].kind != KIND_SEQ2) {
             if (c->seq_operations[i] == OP_SEQ) {
                 waitpid(cmd_pid, &status, 0);
             }
         } else {
             status = cmd_pid;
+            if (c->seq_operations[i] == OP_SEQ) {
+                waitpid(cmd_pid, &status, 0);
+            }
         } 
     }
 
@@ -218,26 +225,28 @@ run_seq2(Command *c) {
             }
         }
 
-
-        switch (c->seq_operations[i])
-        {
-        case OP_CONJUNCT:
-            if (cmd_exit == 0) {
-                need_run = 1;
-            } else {
-                need_run = 0;
+        if (i != c->seq_size - 1) {
+            switch (c->seq_operations[i])
+            {
+            case OP_CONJUNCT:
+                if (cmd_exit == 0) {
+                    need_run = 1;
+                } else {
+                    need_run = 0;
+                }
+                break;
+            case OP_DISJUNCT:
+                if (cmd_exit == 1) {
+                    need_run = 1;
+                } else {
+                    need_run = 0;
+                }
+                break;
+            default:
+                break;
             }
-            break;
-        case OP_DISJUNCT:
-            if (cmd_exit == 1) {
-                need_run = 1;
-            } else {
-                need_run = 0;
-            }
-            break;
-        default:
-            break;
         }
+        
     }
 
     return status;
