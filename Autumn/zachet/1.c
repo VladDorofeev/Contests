@@ -8,6 +8,10 @@ struct list_item
     struct list_item *next, *prev;
 };
 
+
+
+
+
 void
 print_list(struct list_item **list) {
     struct list_item *cur_node = *list;
