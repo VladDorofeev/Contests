@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Header.h"
+#include "narray.h"
 
 int *nums = 0;
 int c = 0;

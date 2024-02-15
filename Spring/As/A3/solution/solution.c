@@ -1,4 +1,4 @@
-#include "Header.h"
+#include "narray.h"
 
 int
 main(void)
