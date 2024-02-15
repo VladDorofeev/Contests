@@ -13,7 +13,7 @@ main(int argc, char **argv) {
         char num;
         lseek(fd, 0, SEEK_SET);
         read(fd, &num, 1);
-        num = (num ^ 0b00001010);
+        num = (num ^ 0x0A);
         lseek(fd, 0, SEEK_SET);
         write(fd, &num, 1);
     }
