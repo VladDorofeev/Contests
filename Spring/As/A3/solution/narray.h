@@ -1,6 +1,12 @@
 #ifndef HEADER_H
 #define HEADER_H
-void read_numbers(int);
-void shrink_numbers(void);
+
+void add_num(int);
+void delete_last(void);
+
+int get_s(void);
+int get_num(int ipos);
+
 void print_numbers(void);
+
 #endif

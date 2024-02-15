@@ -7,26 +7,32 @@ int *nums = 0;
 int c = 0;
 int s = 0;
 
-void
-read_numbers(int max)
-{
-    int n;
-    while (s < max && scanf("%d", &n) == 1) {
-        if (c == s) {
-            c = (c == 0) ? 100 : 2 * c;
-            nums = realloc(nums, c * sizeof *nums);
-        }
-        nums[s++] = n;
+void 
+add_num(int num) {
+    if (c == s) {
+        c = (c == 0) ? 100 : 2 * c;
+        nums = realloc(nums, c * sizeof *nums);
     }
+    nums[s++] = num;
 }
 
-void
-shrink_numbers(void)
-{
-    while (s >= 2 && nums[s - 1] == nums[s - 2]) {
-        nums = realloc(nums, (--s) * sizeof *nums);
-    }
-    c = s;
+int 
+get_s(void) {
+    return s;
+}
+
+int
+get_num(int ipos) {
+    //We can check range here
+    return nums[ipos];
+}
+
+
+void 
+delete_last(void) {
+    //nums = realloc(nums, (--s) * sizeof *nums);
+    //c = s;
+    s--;
 }
 
 void
