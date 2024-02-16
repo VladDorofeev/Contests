@@ -5,6 +5,7 @@ using std::endl;
 
 class A
 {
+    int a;
 public:
     A();
     A(const A &);
@@ -26,18 +27,22 @@ main() {
 #endif
 
 A::A() {
+    this->a = 0;
     cout << "1" << endl;
 }
 
-A::A(const A &a) {
+A::A(const A &b) {
+    this->a = b.a;
     cout << "2" << endl;
 }
 
 A::A(double b) {
+    this->a = static_cast<int> (b);
     cout << "3" << endl;
 }
 
-A::A(float a, unsigned short b) {
+A::A(float f, unsigned short us) {
+    this->a = static_cast<int> (us);
     cout << "4" << endl;
 }
 
@@ -45,19 +50,22 @@ A::~A() {
     cout << "5" << endl;
 }
 
+
 void 
 A::m() {
     //1 5 3 2 5 5 2 4 5 5
-    A *a = new A();//1
-    delete a;//5
+    A *f = new A();//1
+    delete f;//5
 
-    A *b = new A(1.1);//3
+    A *b = new A(2.1341341);//3
     A *c = new A(*b);//2
     delete c;//5
     delete b;//5
 
-    A *d = new A(*b);//2
-    A *e = new A(123.2, 1);//4
-    delete d;//5
+    A *d = new A(*this);//2
+    A *e = new A(123.3,11);//4
+    
     delete e;//5
+    delete d;//5
+
 }
