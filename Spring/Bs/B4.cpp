@@ -12,21 +12,22 @@ public:
     ~String();
     String(const String& str);
     
+    char *cast(const char sym);
+
     void print();
 
     char* get(); 
     
     void append(const char sym);
     void append(const char *line);
-    void append(const String s);
 
     int compare(const char sym);
     int compare(const char *line);
-    int compare(const String s);
 
     void assign(const char sym);
     void assign(const char *line);
-    void assign(const String s);
+
+    operator char*() const;
 
 };
 
@@ -53,9 +54,7 @@ String::get() {
 
 void
 String::append(const char sym) {
-    char *temp = new char[2];
-    temp[0] = sym;
-    temp[1] = 0;
+    char *temp = this->cast(sym);
     this->append(temp);
     delete[] temp;
 }
@@ -79,11 +78,7 @@ String::append(const char *line) {
     this->s = temp;
 }
 
-void
-String::append(const String str) {
-    char *cs = str.s;
-    this->append(cs);
-}
+
 void
 String::print() {
     cout << this->s << endl;
@@ -91,9 +86,7 @@ String::print() {
 
 int
 String::compare(const char sym) {
-    char *temp = new char[2];
-    temp[0] = sym;
-    temp[1] = 0;
+    char *temp = this->cast(sym);
     int res = this->compare(temp);
     delete[] temp;
     return res;
@@ -104,18 +97,10 @@ String::compare(const char *line) {
     return strcmp(this->s, line);
 }
 
-int
-String::compare(const String str) {
-    char *cs = str.s;
-    int res = this->compare(cs);
-    return res;
-}
 
 void
 String::assign(const char sym) {
-    char *temp = new char[2];
-    temp[0] = sym;
-    temp[1] = 0;
+    char *temp = this->cast(sym);
     this->assign(temp);
     delete[] temp;
 }
@@ -129,10 +114,15 @@ String::assign(const char *line) {
     this->s[len] = 0;
 }
 
-void
-String::assign(const String str) {
-    char *cs = str.s;
-    this->assign(cs);
+
+char *
+String::cast(const char sym) {
+    char *temp = new char[2];
+    temp[0] = sym;
+    temp[1] = 0;
+    return temp;
 }
 
-
+String::operator char*() const {
+    return this->s;
+}
