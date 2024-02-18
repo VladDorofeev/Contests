@@ -36,7 +36,6 @@ String::~String() {
 String::String(const String& str) {
     this->s = new char[strlen(str.s) + 1];
     strcpy(this->s, str.s);
-    this->s[strlen(str.s)] = 0;
 }
 
 String::String(const char sym) {
@@ -49,7 +48,6 @@ String::String(const char sym) {
 String::String(const char *line) {
     this->s = new char[strlen(line) + 1];
     strcpy(s, line);
-    this->s[strlen(line)] = 0;
 }
 
 char *
@@ -64,19 +62,13 @@ String::print() {
 
 void 
 String::append(const String str) {
-    char *line = str.s;
-    int line_len = strlen(line);
+    int line_len = strlen(str.s);
     int this_len = strlen(this->s);
 
     char *temp = new char[line_len + this_len + 1];
 
-    for (int i = 0; i < this_len; i++) {
-        temp[i] = this->s[i];
-    }
-    for (int i = this_len; i < this_len + line_len + 1; i++) {
-        temp[i] = line[i - this_len];
-    }
-    temp[line_len + this_len] = 0;
+    strcpy(temp, this->s);
+    strcat(temp, str.s);
 
     delete[] this->s;
     this->s = temp;
@@ -89,10 +81,9 @@ String::compare(const String str) {
 
 void
 String::assign(const String str) {
-    char *line = str.s;
     delete[] this->s;
-    int len = strlen(line);
+    int len = strlen(str.s);
     this->s = new char[len + 1];
-    strcpy(this->s, line);
+    strcpy(this->s, str.s);
     this->s[len] = 0;
 }
