@@ -11,24 +11,16 @@ public:
     String();
     ~String();
     String(const String& str);
+    String(const char sym);
+    String(const char *line);
     
-    char *cast(const char sym);
-
     void print();
 
     char* get(); 
     
-    void append(const char sym);
-    void append(const char *line);
-
-    int compare(const char sym);
-    int compare(const char *line);
-
-    void assign(const char sym);
-    void assign(const char *line);
-
-    operator char*() const;
-
+    void append(const String str);
+    int compare(const String str);
+    void assign(const String str);
 };
 
 
@@ -47,20 +39,32 @@ String::String(const String& str) {
     this->s[strlen(str.s)] = 0;
 }
 
+String::String(const char sym) {
+    char *temp = new char[2];
+    temp[0] = sym;
+    temp[1] = 0;
+    this->s = temp;
+}
+
+String::String(const char *line) {
+    this->s = new char[strlen(line) + 1];
+    strcpy(s, line);
+    this->s[strlen(line)] = 0;
+}
+
 char *
 String::get() {
     return this->s;
 }
 
 void
-String::append(const char sym) {
-    char *temp = this->cast(sym);
-    this->append(temp);
-    delete[] temp;
+String::print() {
+    cout << this->s << endl;
 }
 
 void 
-String::append(const char *line) {
+String::append(const String str) {
+    char *line = str.s;
     int line_len = strlen(line);
     int this_len = strlen(this->s);
 
@@ -78,51 +82,17 @@ String::append(const char *line) {
     this->s = temp;
 }
 
-
-void
-String::print() {
-    cout << this->s << endl;
-}
-
 int
-String::compare(const char sym) {
-    char *temp = this->cast(sym);
-    int res = this->compare(temp);
-    delete[] temp;
-    return res;
-}
-
-int
-String::compare(const char *line) {
-    return strcmp(this->s, line);
-}
-
-
-void
-String::assign(const char sym) {
-    char *temp = this->cast(sym);
-    this->assign(temp);
-    delete[] temp;
+String::compare(const String str) {
+    return strcmp(this->s, str.s);
 }
 
 void
-String::assign(const char *line) {
+String::assign(const String str) {
+    char *line = str.s;
     delete[] this->s;
     int len = strlen(line);
     this->s = new char[len + 1];
     strcpy(this->s, line);
     this->s[len] = 0;
-}
-
-
-char *
-String::cast(const char sym) {
-    char *temp = new char[2];
-    temp[0] = sym;
-    temp[1] = 0;
-    return temp;
-}
-
-String::operator char*() const {
-    return this->s;
 }
