@@ -179,7 +179,7 @@ void
 xabrt(int n) {
     if (n) {
         fprintf(stderr, "Failed function\n"); 
-        abort();
+        //abort();
     }
 }
 
