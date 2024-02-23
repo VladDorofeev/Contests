@@ -7,9 +7,9 @@
 #include <stdio.h>
 
 
-char *delim = NULL;
-int len;
-const char **arr = NULL;
+static char *delim = NULL;
+static int len;
+static const char **arr = NULL;
 
 
 void set_array(int argc, const char *argv[]) {

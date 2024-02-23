@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-char *** commands = NULL;
-int length = 0;
+static char *** commands = NULL;
+static int length = 0;
 
 int add_to_pipeline(const char *array[], int size) {
     size++;
