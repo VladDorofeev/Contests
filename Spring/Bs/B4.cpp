@@ -6,7 +6,6 @@ using std::endl;
 
 class String 
 {
-    char *s;
 public:
     String();
     ~String();
@@ -18,9 +17,12 @@ public:
 
     char* get(); 
     
-    void append(const String str);
-    int compare(const String str);
-    void assign(const String str);
+    void append(const String &str);
+    int compare(const String &str);
+    void assign(const String &str);
+
+private:
+    char *s;
 };
 
 
@@ -61,7 +63,7 @@ String::print() {
 }
 
 void 
-String::append(const String str) {
+String::append(const String &str) {
     int line_len = strlen(str.s);
     int this_len = strlen(this->s);
 
@@ -75,12 +77,12 @@ String::append(const String str) {
 }
 
 int
-String::compare(const String str) {
+String::compare(const String &str) {
     return strcmp(this->s, str.s);
 }
 
 void
-String::assign(const String str) {
+String::assign(const String &str) {
     delete[] this->s;
     int len = strlen(str.s);
     this->s = new char[len + 1];
