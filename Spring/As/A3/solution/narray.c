@@ -3,9 +3,9 @@
 
 #include "narray.h"
 
-int *nums = 0;
-int c = 0;
-int s = 0;
+static int *nums = 0;
+static int c = 0;
+static int s = 0;
 
 void 
 add_num(int num) {
