@@ -1,6 +1,5 @@
 #include <iostream>
 
-
 class UniquePtr
 {
 public:
@@ -15,7 +14,7 @@ public:
     ~UniquePtr();
 
     char &get(int pos) const;
-    friend UniquePtr make(int sz);
+    static UniquePtr make(int sz);
 
 private:
     char *ptr;
@@ -26,31 +25,26 @@ private:
 using namespace std;
 
 UniquePtr::UniquePtr() {
-    cout << "def ctor" << endl;
     this->ptr = nullptr;
     this->sz = 0;
 }
 UniquePtr::UniquePtr(UniquePtr &uptr) {
-    cout << "copy ctor" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
 }
 UniquePtr::UniquePtr(UniquePtr &&uptr) {
-    cout << "move ctor" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
 }
 UniquePtr::UniquePtr(int _sz) {
-    cout << "params ctor" << endl;
     ptr = new char[_sz];
     sz = _sz;
 }
 
 const UniquePtr& 
 UniquePtr::operator= (UniquePtr &uptr) {
-    cout << "oper = &" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
@@ -58,7 +52,6 @@ UniquePtr::operator= (UniquePtr &uptr) {
 }
 const UniquePtr& 
 UniquePtr::operator= (UniquePtr &&uptr) {
-    cout << "oper = &&" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
@@ -66,27 +59,23 @@ UniquePtr::operator= (UniquePtr &&uptr) {
 }
 
 UniquePtr::~UniquePtr() {
-    cout << "destructor" << endl;    
     delete[] ptr;
 }
 
 char&
 UniquePtr::get(int pos) const {
-    cout << "get worked" << endl;
     return ptr[pos];
 }
 
 UniquePtr
-make(int _sz) {
-    cout << "start make" << endl;
-    cout << "end make" << endl;
+UniquePtr::make(int _sz) {
     return std::move(UniquePtr(_sz));
 }
 
 #ifdef _main
 int
 main() {
-    UniquePtr uptr = make(10000);
+    UniquePtr uptr = UniquePtr::make(10000);
     uptr.get(0) = 'a';
     cout << endl;
 
@@ -95,7 +84,7 @@ main() {
     cout << uptr2.get(0) << endl;
     cout << endl;
 
-    const UniquePtr uptr3 = make(10000);
+    const UniquePtr uptr3 = UniquePtr::make(10000);
     cout << endl;
 
 
