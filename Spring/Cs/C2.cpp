@@ -14,8 +14,9 @@ public:
 
     ~UniquePtr();
 
-    char get(int pos) const;
+    char &get(int pos) const;
     friend UniquePtr make(int sz);
+
 private:
     char *ptr;
     int sz;
@@ -69,35 +70,35 @@ UniquePtr::~UniquePtr() {
     delete[] ptr;
 }
 
-char 
+char&
 UniquePtr::get(int pos) const {
-    cout << "get" << endl;
+    cout << "get worked" << endl;
     return ptr[pos];
 }
 
 UniquePtr
 make(int _sz) {
     cout << "start make" << endl;
-
     cout << "end make" << endl;
-    return UniquePtr(_sz);
+    return std::move(UniquePtr(_sz));
 }
 
+#ifdef _main
 int
 main() {
     UniquePtr uptr = make(10000);
+    uptr.get(0) = 'a';
     cout << endl;
 
     UniquePtr uptr2;
     uptr2 = uptr;
+    cout << uptr2.get(0) << endl;
     cout << endl;
 
-    UniquePtr uptr3;
-    uptr3 = make(10000);
+    const UniquePtr uptr3 = make(10000);
     cout << endl;
-
-    const UniquePtr uptr4 = uptr3;
 
 
     return 0;
 }
+#endif
