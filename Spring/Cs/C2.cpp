@@ -24,34 +24,27 @@ private:
     UniquePtr(int _sz);
 };
 
-using namespace std;
-
 UniquePtr::UniquePtr() {
-    cout << "def ctor" << endl;
     this->ptr = nullptr;
     this->sz = 0;
 }
 UniquePtr::UniquePtr(UniquePtr &uptr) {
-    cout << "copy ctor" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
 }
 UniquePtr::UniquePtr(UniquePtr &&uptr) {
-    cout << "move ctor" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
 }
 UniquePtr::UniquePtr(int _sz) {
-    cout << "params ctor" << endl;
     ptr = new char[_sz];
     sz = _sz;
 }
 
 UniquePtr& 
 UniquePtr::operator= (UniquePtr &uptr) {
-    cout << "oper = &" << endl;
     ptr = uptr.ptr;
     sz = uptr.sz;
     uptr.ptr = nullptr;
@@ -59,7 +52,6 @@ UniquePtr::operator= (UniquePtr &uptr) {
 }
 UniquePtr& 
 UniquePtr::operator= (UniquePtr &&uptr) {
-    cout << "oper = &&" << endl;
     this->ptr = uptr.ptr;
     this->sz = uptr.sz;
     uptr.ptr = nullptr;
@@ -67,7 +59,6 @@ UniquePtr::operator= (UniquePtr &&uptr) {
 }
 
 UniquePtr::~UniquePtr() {
-    cout << "destructor" << endl;  
     delete[] ptr;
 }
 
