@@ -8,12 +8,14 @@ public:
     UniquePtr(UniquePtr &uptr);
     UniquePtr(UniquePtr &&uptr);
 
-    const UniquePtr& operator= (UniquePtr &uptr);
+    UniquePtr& operator= (UniquePtr &uptr);
     UniquePtr& operator= (UniquePtr &&uptr);
 
     ~UniquePtr();
 
-    char &get(int pos) const;
+    char &get(int pos);
+    const char &get(int pos) const;
+
     static UniquePtr make(int sz);
 
 private:
@@ -47,7 +49,7 @@ UniquePtr::UniquePtr(int _sz) {
     sz = _sz;
 }
 
-const UniquePtr& 
+UniquePtr& 
 UniquePtr::operator= (UniquePtr &uptr) {
     cout << "oper = &" << endl;
     ptr = uptr.ptr;
@@ -70,10 +72,15 @@ UniquePtr::~UniquePtr() {
 }
 
 char&
-UniquePtr::get(int pos) const {
-    cout << "get" << endl;
+UniquePtr::get(int pos) {
     return ptr[pos];
 }
+
+const char &
+UniquePtr::get(int pos) const {
+    return ptr[pos];
+}
+
 
 UniquePtr
 UniquePtr::make(int _sz) {
@@ -105,6 +112,12 @@ main() {
     cout << "4" << endl;
     UniquePtr uptr4 = uptr3;
     cout << uptr2.get(0) << endl;
+    cout << endl;
+
+
+    cout << "5" << endl;
+    const UniquePtr uptr5(UniquePtr::make(100));
+    uptr5.get(0) = 'c';
     cout << endl;
 
 
