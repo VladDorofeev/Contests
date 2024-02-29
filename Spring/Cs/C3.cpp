@@ -4,28 +4,22 @@
 class DebugPrinter 
 {
 public: 
-    static DebugPrinter *get();
-    ~DebugPrinter();
+    static DebugPrinter &get();
 
     DebugPrinter &out(int); 
-    DebugPrinter &out(char) ; 
+    DebugPrinter &out(char); 
 
-    DebugPrinter( DebugPrinter&) = delete;
-    DebugPrinter operator=(DebugPrinter &) = delete;
+    DebugPrinter(const DebugPrinter&) = delete;
+    DebugPrinter operator=(const DebugPrinter&) = delete;
 private:
-    static  DebugPrinter *ptr;
+    ~DebugPrinter();
     DebugPrinter();
 };
 
-DebugPrinter *DebugPrinter::ptr = nullptr;
-
-DebugPrinter*
+DebugPrinter&
 DebugPrinter::get() {
-    if (ptr == nullptr) {
-        static DebugPrinter dbg;
-        ptr = &dbg;
-    }
-    return ptr;
+    static DebugPrinter dbg;
+    return dbg;
 }
 
 DebugPrinter::~DebugPrinter() {
@@ -53,7 +47,7 @@ class IntCharPair
 public:
     IntCharPair(int, char);
     // not more than one new declaration is allowed here
-    friend DebugPrinter& out(DebugPrinter&, IntCharPair&);
+    friend DebugPrinter& out(const DebugPrinter&, const IntCharPair&);
 private:
     int n;
     char c;
@@ -65,20 +59,17 @@ IntCharPair::IntCharPair(int _n, char _c) {
 }
 
 DebugPrinter&
-out(DebugPrinter &dbg, IntCharPair &pair) {
-    dbg.out(pair.c);
-    dbg.out(pair.n);
-    return dbg;
+out(const DebugPrinter &dbg, const IntCharPair &pair) {
+    //(n, c)
+    return DebugPrinter::get().out('(').out(pair.n).out(',').out(' ').out(pair.c).out(')');
 }
 
 #ifdef _main
 
 int
 main() {
-    DebugPrinter *dbg = DebugPrinter::get();
     IntCharPair pair(123, 'q');
-
-    out(dbg->out('>'), pair).out('<');
+    out(DebugPrinter::get().out('>'), pair).out('<');
     return 0;
 }
 
