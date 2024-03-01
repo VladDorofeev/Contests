@@ -7,13 +7,13 @@ class Logger
 {
 public:
     static Logger& getLogger(int key);
-
     static void set_global_severity(int);
+
     void set_severity(int);
     int get_severity() const;
     void log(const char *) const;
 
-    ~Logger(){};
+    ~Logger();
 private:
     Logger(int);
     Logger(const Logger&);
@@ -24,12 +24,12 @@ private:
     int key;
 
 
-    static map<int, Logger> loggers;
+    static map<int, Logger*> loggers;
 
 };
 
 int Logger::global_severity = 0;
-std::map<int, Logger> Logger::loggers;
+std::map<int, Logger*> Logger::loggers;
 
 Logger::Logger(int _key):cur_severity(0),key(_key) {};
 Logger 
@@ -42,20 +42,40 @@ Logger::Logger(const Logger& logger) {
     this->key = logger.key;
     this->cur_severity = logger.key;
 }
-
-
-
-void 
-Logger::set_global_severity(int gl_sev) {/////////////////////need  rewrite
-
+Logger::~Logger() {
+    delete loggers[this->key]; 
 }
+
 
 Logger& 
 Logger::getLogger(int _key) {
     if (loggers.find(_key) == loggers.end()) {
-        loggers[_key] = Logger(_key);
+        loggers[_key] = new Logger(_key);
     }
-    return loggers[_key];
+    return *loggers[_key];
+}
+
+
+
+
+void 
+Logger::set_global_severity(int gl_sev) {
+    global_severity = gl_sev;
+}
+
+void 
+Logger::set_severity(int sev) {
+    this->cur_severity = sev;
+}
+int 
+Logger::get_severity() const {
+    return this->cur_severity;
+}
+void 
+Logger::log(const char *s) const {
+    if (this->cur_severity >= global_severity) {
+        std::cout << s << std::endl;
+    }
 }
 
 
@@ -64,6 +84,10 @@ Logger::getLogger(int _key) {
 
 int
 main() {
+    Logger::set_global_severity(123);
+    Logger::getLogger(1).set_severity(124).log;
+    Logger::getLogger(2);
+    Logger::getLogger(3);
     return 0;
 }
 
