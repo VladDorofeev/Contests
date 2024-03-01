@@ -81,13 +81,14 @@ Logger::log(const char *s) const {
 
 
 //#ifdef _main
-
 int
 main() {
     Logger::set_global_severity(123);
-    Logger::getLogger(1).set_severity(124).log;
-    Logger::getLogger(2);
-    Logger::getLogger(3);
+
+    Logger::getLogger(1).set_severity(124);
+    std::cout << Logger::getLogger(1).get_severity() << std::endl;
+    Logger::getLogger(1).log("hahahahah");
+
     return 0;
 }
 
