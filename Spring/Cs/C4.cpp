@@ -3,9 +3,23 @@
 
 using std::map;
 
+class Logger;
+
+class Loggers 
+{
+public:
+    friend Logger;
+    static map<int, Logger*> lmap;
+    ~Loggers();
+private:
+};
+
+std::map<int, Logger*> Loggers::lmap;
+
 class Logger
 {
 public:
+    friend Loggers;
     static Logger& getLogger(int key);
     static void set_global_severity(int);
 
@@ -23,39 +37,28 @@ private:
     int cur_severity;
     int key;
 
-
-    static map<int, Logger*> loggers;
-
+    
+    static Loggers loggers;
 };
 
 int Logger::global_severity = 0;
-std::map<int, Logger*> Logger::loggers;
+Loggers Logger::loggers;
 
 Logger::Logger(int _key):cur_severity(0),key(_key) {};
-Logger 
-Logger::operator=(const Logger& logger) {
-    this->cur_severity = logger.cur_severity;
-    this->key = logger.key;
-    return logger;
+Logger::~Logger() {};
+Loggers::~Loggers() {
+    for (auto [key, log]: lmap) {
+        delete log;
+    }
 }
-Logger::Logger(const Logger& logger) {
-    this->key = logger.key;
-    this->cur_severity = logger.key;
-}
-Logger::~Logger() {
-    delete loggers[this->key]; 
-}
-
 
 Logger& 
 Logger::getLogger(int _key) {
-    if (loggers.find(_key) == loggers.end()) {
-        loggers[_key] = new Logger(_key);
+    if (loggers.lmap.find(_key) == loggers.lmap.end()) {
+        loggers.lmap[_key] = new Logger(_key);
     }
-    return *loggers[_key];
+    return *loggers.lmap[_key];
 }
-
-
 
 
 void 
@@ -80,7 +83,7 @@ Logger::log(const char *s) const {
 
 
 
-//#ifdef _main
+#ifdef _main
 int
 main() {
     Logger::set_global_severity(123);
@@ -89,8 +92,12 @@ main() {
     std::cout << Logger::getLogger(1).get_severity() << std::endl;
     Logger::getLogger(1).log("hahahahah");
 
+    Logger::getLogger(1).set_severity(12);
+
+    Logger::getLogger(1).log("bebebebebe");
+
     return 0;
 }
 
-//#endif
+#endif
 
