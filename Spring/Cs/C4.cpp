@@ -1,15 +1,13 @@
 #include <iostream>
 #include <map>
 
-using std::map;
-
 class Logger;
 
 class Loggers 
 {
 public:
     friend Logger;
-    static map<int, Logger*> lmap;
+    static std::map<int, Logger*> lmap;
     ~Loggers();
 private:
 };
@@ -27,11 +25,10 @@ public:
     int get_severity() const;
     void log(const char *) const;
 
-    ~Logger();
 private:
     Logger(int);
-    Logger(const Logger&);
-    Logger operator=(const Logger&);
+    Logger(const Logger&) = delete;
+    Logger operator=(const Logger&) = delete;
 
     static int global_severity;
     int cur_severity;
@@ -45,7 +42,6 @@ int Logger::global_severity = 0;
 Loggers Logger::loggers;
 
 Logger::Logger(int _key):cur_severity(0),key(_key) {};
-Logger::~Logger() {};
 Loggers::~Loggers() {
     for (auto [key, log]: lmap) {
         delete log;
@@ -60,12 +56,10 @@ Logger::getLogger(int _key) {
     return *loggers.lmap[_key];
 }
 
-
 void 
 Logger::set_global_severity(int gl_sev) {
     global_severity = gl_sev;
 }
-
 void 
 Logger::set_severity(int sev) {
     this->cur_severity = sev;
