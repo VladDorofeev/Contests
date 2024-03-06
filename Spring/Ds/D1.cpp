@@ -147,6 +147,9 @@ namespace equations
 
     Equation operator== (IntVariable a, IntVariable b) {
         Equation eq(a.ptr);
+        if (a.just_num) {
+            eq.x = b.ptr;
+        }
         if (a.is_good && b.is_good) {
             if ( ((!a.just_num) && (!b.just_num) && (a.ptr == b.ptr)) 
             || (a.just_num) || (b.just_num) ){
@@ -185,3 +188,4 @@ namespace equations
 
 
 } 
+
