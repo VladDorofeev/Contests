@@ -16,6 +16,7 @@ namespace equations
         friend Expression;
         friend Equation;
         friend int solve(const Equation &);
+        Expression operator-();
     private:
         int value;
     };
@@ -23,6 +24,10 @@ namespace equations
     std::ostream& operator << (std::ostream &os, const IntVariable &var) {
         return os << var.value;
     }
+    Expression Expression::operator-() {
+        return Expression();
+    }
+
 
     class Expression
     {
@@ -36,9 +41,9 @@ namespace equations
         friend int solve(const Equation &);
         friend Expression operator+(const Expression&, const Expression&);
         friend Expression operator*(const Expression&, const Expression&);
-        friend Expression operator-(const Expression&, const Expression&);
-        Expression &operator-();
-        
+        //friend Expression operator-(const Expression&, const Expression&);
+        Expression operator-() const;
+
         void print()const;
     private:
         bool is_good = true;
@@ -100,14 +105,14 @@ namespace equations
 
         return exp;
     }
-    Expression 
-    Expression::operator-() const {
+    Expression Expression::operator-() const {
         Expression temp(*this);
         temp.a = -a;
         temp.b = -b;
         return temp;
     }
 
+    
 
     
 
