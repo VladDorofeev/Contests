@@ -38,10 +38,7 @@ namespace equations {
         int get_root() const;
         IntVariable* get_var_pt() const;
     private:
-        int val;
-        int kf;
-        bool fail;
-        IntVariable* orig_var_pt;
+        Expression eq_ex;
     };
     int solve(const Equation&);
 }
@@ -144,20 +141,20 @@ equations::Equation operator==
 
 //Equation def
 equations::Equation::Equation(const equations::Expression& exp)
-: val(exp.get_val()), kf(exp.get_kf()), fail(exp.failed()), orig_var_pt(exp.get_var_pt()) {
+: eq_ex(exp) {
 }
 
 bool equations::Equation::failed() const{
-    if (fail || (kf == 0) || (val%kf != 0)) {
+    if (eq_ex.failed() || (eq_ex.get_kf() == 0) || (eq_ex.get_val()%eq_ex.get_kf() != 0)) {
         return true;
     }
     return false;
 }
 int equations::Equation::get_root() const{
-    return -val/kf;
+    return -eq_ex.get_val()/eq_ex.get_kf();
 }
 equations::IntVariable* equations::Equation::get_var_pt() const {
-    return orig_var_pt;
+    return eq_ex.get_var_pt();
 }
 //solve
 int equations::solve(const equations::Equation& eq) {
@@ -167,3 +164,15 @@ int equations::solve(const equations::Equation& eq) {
     eq.get_var_pt()->set_val(eq.get_root());
     return 0;
 }
+
+/*int
+main() {
+    equations::IntVariable x;
+    equations::IntVariable y;
+
+    if (equations::solve(0*x*x + x == 24) == 0) {
+        std::cout << x << std::endl;
+    } else {
+        std::cerr << "No solution" << std::endl;
+    }
+}*/
