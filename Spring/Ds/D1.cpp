@@ -16,6 +16,7 @@ namespace equations
         friend Expression;
         friend Equation;
         friend int solve(const Equation &);
+
         Expression operator-();
     private:
         int value;
@@ -24,9 +25,7 @@ namespace equations
     std::ostream& operator << (std::ostream &os, const IntVariable &var) {
         return os << var.value;
     }
-    Expression Expression::operator-() {
-        return Expression();
-    }
+
 
 
     class Expression
@@ -41,7 +40,7 @@ namespace equations
         friend int solve(const Equation &);
         friend Expression operator+(const Expression&, const Expression&);
         friend Expression operator*(const Expression&, const Expression&);
-        //friend Expression operator-(const Expression&, const Expression&);
+        friend Expression operator-(const Expression&, const Expression&);
         Expression operator-() const;
 
         void print()const;
@@ -111,10 +110,10 @@ namespace equations
         temp.b = -b;
         return temp;
     }
+    Expression operator-(const Expression &l, const Expression &r) {
+        return l + (-r);
+    }
 
-    
-
-    
 
     class Equation
     {
@@ -128,8 +127,6 @@ namespace equations
     };
     Equation::Equation(const Expression &l, const Expression &r):left(l), right(r) {}
     Equation operator== (const Expression &l, const Expression &r) {
-        l.print();
-        r.print();
         Equation eq(l,r);
         return eq;
     } 
@@ -153,9 +150,16 @@ namespace equations
         if ((eq.right.b - eq.left.b) % (eq.left.a - eq.right.a) != 0) {
             return 1;
         }
-
-        eq.left.var->value = (eq.right.b - eq.left.b) / (eq.left.a - eq.right.a);
+        if (eq.left.just_num) {
+            eq.right.var->value = (eq.left.b - eq.right.b) / (eq.right.a - eq.left.a);
+        } else {
+            eq.left.var->value = (eq.right.b - eq.left.b) / (eq.left.a - eq.right.a);
+        }
         return 0;        
+    }
+
+    Expression IntVariable::operator-() {
+        return -(Expression(*this));
     }
 
 } 
@@ -163,11 +167,11 @@ namespace equations
 
 #ifdef _main
 int 
-test(equations::Equation eq) {
+test(equations::Equation eq, int res) {
     if (equations::solve(eq) == 0) {
-        return 0;
+        return !(0 == res);
     } else {
-        return 1;
+        return !(1 == res);
     }
 }
 
@@ -175,146 +179,29 @@ int main()
 {
     equations::IntVariable x,y;
 
-    std::cout << "Test #1 " << std::endl << (test(2*x+4 ==-x + 7) == 0 ? "passed, res = " : "No sol!!! res = ") << x << std::endl;
+    std::cout << "Test #1 " << std::endl << (test(x == 1, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #2 " << std::endl << (test(x + 1 == 123, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #3 " << std::endl << (test(2*x == 2, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #4 " << std::endl << (test(x*x - 1 == 2, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #5 " << std::endl << (test(x*x - x*x + x == 2, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #6 " << std::endl << (test(x*x*x*x*x + x == 123, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    
+    //Mirror
+    std::cout << "Test #7 " << std::endl << (test(1 == x, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #8 " << std::endl << (test(2 == x + 1, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #9 " << std::endl << (test(2 == 2*x, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #10 " << std::endl << (test(2 == x*x - 1, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #11 " << std::endl << (test(x*x - x*x + x == 1, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #12 " << std::endl << (test(123 == x*x*x*x*x + x, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+
+    std::cout << "Test #13 " << std::endl << (test((x+123)*1 == 123, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #14 " << std::endl << (test((1+1)*x == 1232, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    
+    std::cout << "Test #15 " << std::endl << (test(0*x == 1232, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #16 " << std::endl << (test(x+y-y == 1232, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #16 " << std::endl << (test(0*y + x == 1232, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #16 " << std::endl << (test((y-y) * x == 1232, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #16 " << std::endl << (test((x-x) * x == 1232, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+
 }
 #endif
-
-
-/*
-void IntVariable::print() const {
-        std::cout << a << 'x' << '+' << b << " , " << "is_g=" << is_good;
-        std::cout << " num= " << just_num << " ptr="  << ptr << std::endl; 
-    }
-
-    IntVariable::IntVariable():just_num(false), ptr(this) {
-    }
-    IntVariable::IntVariable(int num):a(0), b(num), just_num(true), ptr(nullptr) {
-    }
-    IntVariable::IntVariable(const IntVariable& var) {
-        a = var.a;
-        b = var.b;
-        x = var.x;
-        is_good = var.is_good;
-        just_num = var.just_num;
-        ptr = var.ptr;
-    }
-    IntVariable::IntVariable(IntVariable&& var) {
-        a = var.a;
-        b = var.b;
-        x = var.x;
-        is_good = var.is_good;
-        just_num = var.just_num;
-        ptr = var.ptr;
-    }
-    IntVariable IntVariable::operator-() const{
-        IntVariable temp(*this);
-        temp.a = -a;
-        temp.b = -b;
-        return temp;
-    }
-
-    class Equation
-    {
-    public:
-        Equation(IntVariable *a);
-
-        friend Equation operator== (IntVariable a, IntVariable b); 
-        friend int solve(const Equation& eq);
-    private:
-        //ax + b == 0
-        bool is_good;
-        IntVariable *x;
-    };
-
-    Equation::Equation(IntVariable *a): is_good(false), x(a) {}
-
-    std::ostream& operator << (std::ostream &os, const equations::IntVariable &var) {
-        return os << var.x;
-    }
-
-    IntVariable operator+ (const IntVariable& a, const IntVariable& b) {
-        IntVariable temp;
-        temp.is_good = a.is_good && b.is_good;
-        
-        //Checking pointers (only one variable in equation)
-        if (!( ((!a.just_num) && (!b.just_num) && (a.ptr == b.ptr)) 
-            || (a.just_num) || (b.just_num) )){
-            temp.is_good = false;
-
-            return temp;
-        }
-
-        //We need understand what is variable
-        if (a.just_num) {
-            temp.ptr = b.ptr;
-        } else {
-            temp.ptr = a.ptr;
-        }
-        
-        
-        temp.a = a.a + b.a;
-        temp.b = a.b + b.b;
-
-        return temp;
-    }
-    IntVariable operator- (const IntVariable& a, const IntVariable& b) {
-        IntVariable temp = a + (-b);
-
-        return temp;
-    }
-    
-    IntVariable operator* (const IntVariable& a, const IntVariable& b) {
-        IntVariable temp;
-        temp.is_good = a.is_good && b.is_good;
-        
-        //Check x*x (x*y / y*x)
-        if ((!a.just_num) && (!b.just_num)) {
-            temp.is_good = false;
-
-            return temp;
-        }
-
-        //We need understand what is variable
-        if (a.just_num) {
-            temp.ptr = b.ptr;
-        } else {
-            temp.ptr = a.ptr;
-        }
-        
-
-        temp.a = a.a*b.b + b.a*a.b;
-        temp.b = a.b * b.b;
-
-        return temp;
-    }
-
-    class IntVariable
-    {
-    public:
-        IntVariable();
-        IntVariable(int num);
-        IntVariable(const IntVariable&);
-        IntVariable(IntVariable&&);
-
-        friend Equation;
-        friend std::ostream& operator << (std::ostream &os, const IntVariable &var);
-        friend IntVariable operator+ (const IntVariable& a, const IntVariable& b);
-        friend IntVariable operator* (const IntVariable& a, const IntVariable& b);
-        
-        friend Equation operator== (IntVariable a, IntVariable b); 
-
-        IntVariable operator-()const;
-
-        friend int solve(const Equation &eq);
-
-        void print()const;
-    private:
-        //ax + b
-        int a = 1;
-        int b = 0;
-        int x = 0;
-        bool is_good = true;
-        bool just_num;
-        IntVariable *ptr;
-    };
-*/
