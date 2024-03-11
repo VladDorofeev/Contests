@@ -16,11 +16,13 @@ public:
 
     int size() const;
 
-    void expansion(int new_sz); //Make size bigger than before call method
+    //Make size bigger than before call method
+    void expansion(int new_sz); 
 private:
     int *arr;
     int cap;
     int sz;
+    enum { INIT_SZ = 100 }; 
 };
 DynArray::DynArray(): arr(nullptr), cap(0), sz(0) {}
 DynArray::DynArray(const DynArray &d_arr) {        
@@ -73,17 +75,26 @@ DynArray::size() const {
 
 void 
 DynArray::expansion(int new_sz) {
-    cap = new_sz;
-    int *temp = new int[cap];
-    for (int i = 0; i < sz; ++i) {
-        temp[i] = arr[i];
-    }
-    for (int i = sz; i < new_sz; ++i) {
-        temp[i] = 0;
-    }
+    if (new_sz > cap) {
+        if (cap == 0) {
+            cap = INIT_SZ;
+        }
+        while (cap < 2 * new_sz) {
+            cap *= 2;
+        }
+
+        int *temp = new int[cap];
+        for (int i = 0; i < sz; ++i) {
+            temp[i] = arr[i];
+        }
+        for (int i = sz; i < new_sz; ++i) {
+            temp[i] = 0;
+        }
+        delete[] arr;
+        arr = temp;
+    } 
     sz = new_sz;
-    delete[] arr;
-    arr = temp;
+    
 }
 
 }
@@ -119,9 +130,9 @@ namespace iterators
     InputIterator 
     InputIterator::operator++(int) {
         InputIterator temp(*this);
-        if (input == nullptr) {
-            throw "iterator`s stream closed";
-        }
+        //if (input == nullptr) {
+        //   throw "iterator`s stream closed";
+        //}
         
         if (!((*input) >> num)) {
             input = nullptr;
@@ -195,8 +206,6 @@ namespace iterators
 
 
 
-
-
 #ifdef _main
 namespace algorithms
 {
@@ -207,6 +216,7 @@ copy(
     iterators::InserterIterator begin2)
 {
     iterators::InserterIterator iterator2 = begin2;
+
     while (iterator != end) {
         *iterator2++ = *iterator++;
     }
@@ -225,10 +235,6 @@ main()
     for (int i = 0; i < a.size(); ++i) {
         std::cout << a[i] << std::endl;
     }
-    a = a;
-    a = containers::DynArray(a);
-    for (int i = 0; i < a.size(); ++i) {
-        std::cout << a[i] << std::endl;
-    }
+
 }
 #endif
