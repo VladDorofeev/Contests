@@ -34,6 +34,7 @@ containers::DynArray::~DynArray() {
 containers::DynArray& containers::DynArray::operator=(const containers::DynArray& other) {
     if (array != other.array) {
         delete[] array;
+        cnt = other.cnt;
         capacity = other.capacity;
         array = capacity>0?new int[capacity]:nullptr;
         for(int i = 0; i < cnt; ++i) {
@@ -143,15 +144,11 @@ iterators::InserterIterator::InserterIterator(const iterators::InserterIterator&
 }
 
 int& iterators::InserterIterator::operator*() {
-    if (cur_pos >= array->size()) {
-        array->increase_size(cur_pos);
-    }
+    array->increase_size(cur_pos);
     return (*array)[cur_pos];
 }
 const int& iterators::InserterIterator::operator*() const {
-    if (cur_pos >= array->size()) {
-        array->increase_size(cur_pos);
-    }
+    array->increase_size(cur_pos);
     return (*array)[cur_pos];
 }
 iterators::InserterIterator iterators::InserterIterator::operator++(int) {
