@@ -7,23 +7,27 @@ namespace equations
     class Equation;
     int solve(const Equation &eq);
 
-
     class IntVariable
     {
     public:
         IntVariable();
-        friend std::ostream& operator << (std::ostream &os, const IntVariable &var);
-        friend Expression;
-        friend Equation;
-        friend int solve(const Equation &);
 
         Expression operator-();
+
+        int get_value() const;
+        void set_value(int);
     private:
         int value;
     };
     IntVariable::IntVariable():value(0) {}
     std::ostream& operator << (std::ostream &os, const IntVariable &var) {
-        return os << var.value;
+        return os << var.get_value();
+    }
+    int IntVariable::get_value() const {
+        return value;
+    }
+    void IntVariable::set_value(int num) {
+        value = num;
     }
 
 
@@ -31,19 +35,27 @@ namespace equations
     class Expression
     {
     public:
-        Expression();
         Expression(int);
         Expression(IntVariable &);
         Expression(const Expression& exp) = default;
+        Expression(bool is_good, bool just_num, int a, int b, IntVariable *var);
 
-        friend Equation;
-        friend int solve(const Equation &);
-        friend Expression operator+(const Expression&, const Expression&);
-        friend Expression operator*(const Expression&, const Expression&);
-        friend Expression operator-(const Expression&, const Expression&);
         Expression operator-() const;
 
-        void print()const;
+        bool good() const;
+        void set_good(bool);
+
+        bool is_num() const;
+        void set_is_num(bool);
+
+        int get_a() const;
+        void set_a(int);
+
+        int get_b() const;
+        void set_b(int);
+
+        IntVariable *get_var() const;
+        void set_var(IntVariable *);
     private:
         bool is_good = true;
         bool just_num; 
@@ -53,74 +65,86 @@ namespace equations
         int b = 0;
         IntVariable *var = nullptr;
     };
-    Expression::Expression(): is_good(false), just_num(false) {}
     Expression::Expression(int num):just_num(true), a(0), b(num) {}
     Expression::Expression(IntVariable &x):just_num(false), var(&x) {}
-    void Expression::print()const {
-        std::cout << "a=" << a << " b=" << b << " is_good=" << is_good;
-        std::cout << " just_num=" << just_num << " var=" << var << std::endl;
-    }
+    Expression::Expression(bool _is_good, bool _just_num, int _a, int _b, IntVariable *_var):
+        is_good(_is_good), just_num(_just_num), a(_a), b(_b), var(_var) {};
+
     Expression operator+(const Expression &l, const Expression &r) {
-        Expression exp;
-        exp.is_good = l.is_good && r.is_good;
-        exp.just_num = l.just_num && r.just_num;
+        bool is_good = l.good() && r.good();
+        bool just_num = l.is_num() && r.is_num();
 
-        if ((!(l.just_num)) && (!(r.just_num)) 
-            && (l.var != r.var)){
-            exp.is_good = false;
+        if ((!(l.is_num())) && (!(r.is_num())) 
+            && (l.get_var() != r.get_var())){
+            is_good = false;
         }
 
-        if (l.just_num) {
-            exp.var = r.var;
+        IntVariable *var = nullptr;
+        if (l.is_num()) {
+            var = r.get_var();
         } else {
-            exp.var = l.var;
+            var = l.get_var();
         }
 
-        exp.a = l.a + r.a;
-        exp.b = l.b + r.b;
+        int a = l.get_a() + r.get_a();
+        int b = l.get_b() + r.get_b();
 
-        return exp;
+        return Expression(is_good, just_num, a, b, var);
     }
     Expression operator*(const Expression &l, const Expression &r) {
-        Expression exp; 
-        exp.is_good = l.is_good && r.is_good;
-        exp.just_num = l.just_num && r.just_num;
+        bool is_good = l.good() && r.good();
+        bool just_num = l.is_num() && r.is_num();
 
-        if ((!(l.just_num)) && (!(r.just_num))) {
-            exp.is_good = false;
+        if ((!(l.is_num())) && (!(r.is_num()))) {
+            is_good = false;
         }
-
-        if (l.just_num) {
-            exp.var = r.var;
+        IntVariable *var = nullptr;
+        if (l.is_num()) {
+            var = r.get_var();
         } else {
-            exp.var = l.var;
+            var = l.get_var();
         }
 
         //(ax+b)(cx+d) = acx^2 + (ad+bc)x + bd
         //(ax+b)(d) = adx + bd
         //(b)(cx+d) = cbx + bd
-        exp.a = l.a*r.b + r.a*l.b;
-        exp.b = l.b * r.b;
+        int a = l.get_a()*r.get_b() + r.get_a()*l.get_b();
+        int b = l.get_b() * r.get_b();
 
-        return exp;
+        return Expression(is_good, just_num, a, b, var);
     }
     Expression Expression::operator-() const {
         Expression temp(*this);
-        temp.a = -a;
-        temp.b = -b;
+        temp.set_a(-temp.get_a());
+        temp.set_b(-temp.get_b());
         return temp;
     }
     Expression operator-(const Expression &l, const Expression &r) {
         return l + (-r);
     }
 
+    bool Expression::good() const {return is_good;};
+    void Expression::set_good(bool _is_good) {is_good = _is_good;};
+
+    bool Expression::is_num() const {return just_num;};
+    void Expression::set_is_num(bool _just_num) {just_num = _just_num;};
+
+    int Expression::get_a() const {return a;};
+    void Expression::set_a(int _a) {a = _a;};
+
+    int Expression::get_b() const {return b;};
+    void Expression::set_b(int _b) {b = _b;};
+
+    IntVariable *Expression::get_var() const {return var;};
+    void Expression::set_var(IntVariable *_var) {var = _var;};
 
     class Equation
     {
     public:
         Equation(const Expression &, const Expression &);
-        friend Equation operator== (const Expression &, const Expression &); 
-        friend int solve(const Equation&);
+
+        Expression get_l() const;
+        Expression get_r() const;
     private:
         Expression left;
         Expression right;
@@ -130,30 +154,34 @@ namespace equations
         Equation eq(l,r);
         return eq;
     } 
+    Expression Equation::get_l() const {return left;};
+    Expression Equation::get_r() const {return right;};
 
 
     int solve(const Equation &eq) {
         //Check good both sides
-        if (!((eq.left.is_good) && (eq.right.is_good))) {
+        if (!((eq.get_l().good()) && (eq.get_r().good()))) {
             return 1;
         }
         //Check same variable in both sides
-        if ((!(eq.left.just_num)) && (!(eq.right.just_num)) 
-            && (eq.left.var != eq.right.var)){
+        if ((!(eq.get_l().is_num())) && (!(eq.get_r().is_num())) 
+            && (eq.get_l().get_var() != eq.get_r().get_var())){
             return 1;
         }
         //Check that a != 0 in equation
-        if (eq.left.a - eq.right.a == 0) {
+        if (eq.get_l().get_a() - eq.get_r().get_a() == 0) {
             return 1;
         }
         //Check that result will be whole number
-        if ((eq.right.b - eq.left.b) % (eq.left.a - eq.right.a) != 0) {
+        if ((eq.get_r().get_b() - eq.get_l().get_b()) % (eq.get_l().get_a() - eq.get_r().get_a()) != 0) {
             return 1;
         }
-        if (eq.left.just_num) {
-            eq.right.var->value = (eq.left.b - eq.right.b) / (eq.right.a - eq.left.a);
+        if (eq.get_l().is_num()) {
+            eq.get_r().get_var()->set_value((eq.get_l().get_b() - eq.get_r().get_b()) / 
+                (eq.get_r().get_a() - eq.get_l().get_a()));
         } else {
-            eq.left.var->value = (eq.right.b - eq.left.b) / (eq.left.a - eq.right.a);
+            eq.get_l().get_var()->set_value((eq.get_r().get_b() - eq.get_l().get_b()) / 
+                (eq.get_l().get_a() - eq.get_r().get_a()));
         }
         return 0;        
     }
