@@ -23,12 +23,13 @@ private:
     int bytes_cap;
     int bytes_sz;
 
-    enum { START_SZ = 2 };
+    enum { START_SZ = 10000 };
 };
 
 MemoryHelper::MemoryHelper(): 
     sz(0), cap(0), ptr(nullptr), bytes_cap(0), bytes_sz(0) 
 {};
+
 MemoryHelper::MemoryHelper(const MemoryHelper& other) {
     sz = other.sz;
     cap = other.cap;
@@ -36,7 +37,9 @@ MemoryHelper::MemoryHelper(const MemoryHelper& other) {
     bytes_sz = other.bytes_sz;
 
     ptr = new char[bytes_cap];
-    std::memcpy(ptr, other.ptr, bytes_sz);
+    if (other.ptr != nullptr) {
+        std::memcpy(ptr, other.ptr, bytes_sz);
+    }
 }
 
 MemoryHelper& 
@@ -51,7 +54,9 @@ MemoryHelper::operator= (const MemoryHelper& other) {
 
     delete[] ptr;
     ptr = new char[bytes_cap];
-    std::memcpy(ptr, other.ptr, bytes_sz);
+    if (other.ptr != nullptr) {
+        std::memcpy(ptr, other.ptr, bytes_sz);
+    }
     return *this;
 }
 
@@ -69,7 +74,6 @@ void*
 MemoryHelper::meminc(int type_sz) {
     if (sz == cap) {
         cap = cap == 0 ? START_SZ : cap * 2;
-        bytes_cap = cap * type_sz;
         char *temp = new char[cap * type_sz];
 
         if (ptr != nullptr) {
@@ -81,7 +85,9 @@ MemoryHelper::meminc(int type_sz) {
     }
 
     sz++;
+
     bytes_sz = sz * type_sz;
+    bytes_cap = cap * type_sz;
 
     return static_cast<void *>(ptr);
 
@@ -91,16 +97,10 @@ MemoryHelper::meminc(int type_sz) {
 class IntVector: public MemoryHelper
 {
 public:
-    IntVector() = default;
-    IntVector(const IntVector&) = default;
-
-    IntVector& operator=(const IntVector&) = default;
-    
     int& operator[](int);
     const int& operator[](int) const;
-
     void insert(int);
-private:
+
 };
 
 void 
@@ -120,21 +120,83 @@ IntVector::operator[](int pos) const {
 }
 
 
+class DoubleVector: public MemoryHelper
+{
+public:
+    double& operator[](int);
+    const double& operator[](int) const;
+    void insert(double);
+};
 
+void 
+DoubleVector::insert(double num) {
+    double *dptr = static_cast<double*>(meminc(sizeof(double)));
+    new (&(dptr[sz - 1])) double(num);
+}
+
+double& 
+DoubleVector::operator[](int pos) {
+    return (static_cast<double*>(get_ptr()))[pos];
+}
+
+const double& 
+DoubleVector::operator[](int pos) const {
+    return (static_cast<double*>(get_ptr()))[pos];
+}
+
+
+class IntVectorVector: public MemoryHelper
+{
+public:
+    IntVector& operator[](int);
+    const IntVector& operator[](int) const;
+    void insert(const IntVector&);
+    ~IntVectorVector();
+};
+
+void 
+IntVectorVector::insert(const IntVector& vec) {
+    IntVector *vptr = static_cast<IntVector*>(meminc(sizeof(IntVector)));
+    new (&(vptr[sz - 1])) IntVector(vec);
+}
+
+IntVector& 
+IntVectorVector::operator[](int pos) {
+    return (static_cast<IntVector*>(get_ptr()))[pos];
+}
+
+const IntVector& 
+IntVectorVector::operator[](int pos) const {
+    return (static_cast<IntVector*>(get_ptr()))[pos];
+}
+
+IntVectorVector::~IntVectorVector() {
+    IntVector *vptr = static_cast<IntVector*>(get_ptr());
+    for (int i = 0; i < this->size(); i++) {
+        vptr[i].~IntVector();
+    }
+}
+
+
+#ifdef _main
 int
 main(){
-    IntVector vec;
-    vec.insert(1);
-    vec.insert(2);
-    vec.insert(3);
-    vec.insert(4);
-    vec.insert(5);
-    IntVector vec2;
+    IntVector v;
+    v.insert(10);
+    v.insert(20);
+    IntVectorVector m;
+    m.insert(v);
+    m[0][0] = 30;
+    m.insert(IntVector());
+    m.insert(IntVector());
+    // 10 20
+    std::cout << v[0] << ' ' << v[1] << std::endl;
+    // 30 20
+    std::cout << m[0][0] << ' ' << m[0][1] << std::endl;
+    // 2 3 0
+    std::cout << v.size() << ' ' << m.size() << ' ' << m[1].size() << std::endl;
+            
 
-    vec2 = vec;
-
-    for (int i = 0; i < vec2.size(); i++) {
-        std::cout << vec2[i] << std::endl;
-    }
     return 0;
 }
+#endif
