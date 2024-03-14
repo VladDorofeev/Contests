@@ -5,22 +5,56 @@ class MemoryHelper
 {
 public:
     MemoryHelper();
-    ~MemoryHelper();
+    MemoryHelper(const MemoryHelper&);
+
+    MemoryHelper& operator= (const MemoryHelper&);
 
     int size() const;
     int capacity() const;
     
     void *get_ptr() const;
 protected:
-    void* realloc(int type_sz);
-    int sz = 0; 
-    int cap = 0; 
+    ~MemoryHelper();
+    void* meminc(int type_sz);
+    int sz; 
+    int cap; 
 private:
-    char *ptr = nullptr;
+    char *ptr;
+    int bytes_cap;
+    int bytes_sz;
+
     enum { START_SZ = 2 };
 };
 
-MemoryHelper::MemoryHelper(): sz(0), cap(0), ptr(nullptr) {};
+MemoryHelper::MemoryHelper(): 
+    sz(0), cap(0), ptr(nullptr), bytes_cap(0), bytes_sz(0) 
+{};
+MemoryHelper::MemoryHelper(const MemoryHelper& other) {
+    sz = other.sz;
+    cap = other.cap;
+    bytes_cap = other.bytes_cap;
+    bytes_sz = other.bytes_sz;
+
+    ptr = new char[bytes_cap];
+    std::memcpy(ptr, other.ptr, bytes_sz);
+}
+
+MemoryHelper& 
+MemoryHelper::operator= (const MemoryHelper& other) {
+    if (this == &other) {
+        return *this;
+    }
+    sz = other.sz;
+    cap = other.cap;
+    bytes_cap = other.bytes_cap;
+    bytes_sz = other.bytes_sz;
+
+    delete[] ptr;
+    ptr = new char[bytes_cap];
+    std::memcpy(ptr, other.ptr, bytes_sz);
+    return *this;
+}
+
 MemoryHelper::~MemoryHelper() {
     delete[] ptr;
 }
@@ -32,9 +66,10 @@ MemoryHelper::get_ptr() const {return static_cast<void *>(ptr);};
 
 
 void* 
-MemoryHelper::realloc(int type_sz) {
+MemoryHelper::meminc(int type_sz) {
     if (sz == cap) {
-        cap = cap == 0 ? START_SZ : cap * 4;
+        cap = cap == 0 ? START_SZ : cap * 2;
+        bytes_cap = cap * type_sz;
         char *temp = new char[cap * type_sz];
 
         if (ptr != nullptr) {
@@ -46,6 +81,7 @@ MemoryHelper::realloc(int type_sz) {
     }
 
     sz++;
+    bytes_sz = sz * type_sz;
 
     return static_cast<void *>(ptr);
 
@@ -56,24 +92,33 @@ class IntVector: public MemoryHelper
 {
 public:
     IntVector() = default;
-    IntVector(const IntVector&);
+    IntVector(const IntVector&) = default;
 
-    IntVector& operator=(const IntVector&);
+    IntVector& operator=(const IntVector&) = default;
     
     int& operator[](int);
     const int& operator[](int) const;
 
     void insert(int);
-    int* get_ptr() {
-        return static_cast<int*>(MemoryHelper::get_ptr());
-    };
 private:
 };
+
 void 
 IntVector::insert(int num) {
-    int *iptr = static_cast<int*>(realloc(sizeof(int)));
+    int *iptr = static_cast<int*>(meminc(sizeof(int)));
     new (&(iptr[sz - 1])) int(num);
 }
+
+int& 
+IntVector::operator[](int pos) {
+    return (static_cast<int*>(get_ptr()))[pos];
+}
+
+const int& 
+IntVector::operator[](int pos) const {
+    return (static_cast<int*>(get_ptr()))[pos];
+}
+
 
 
 int
@@ -84,10 +129,12 @@ main(){
     vec.insert(3);
     vec.insert(4);
     vec.insert(5);
-    std::cout << (vec.get_ptr())[0] << std::endl;
-    std::cout << (vec.get_ptr())[1] << std::endl;
-    std::cout << (vec.get_ptr())[2] << std::endl;
-    std::cout << (vec.get_ptr())[3] << std::endl;
-    std::cout << (vec.get_ptr())[4] << std::endl;
+    IntVector vec2;
+
+    vec2 = vec;
+
+    for (int i = 0; i < vec2.size(); i++) {
+        std::cout << vec2[i] << std::endl;
+    }
     return 0;
 }
