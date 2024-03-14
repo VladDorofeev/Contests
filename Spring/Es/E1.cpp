@@ -9,6 +9,8 @@ public:
 
     int size() const;
     int capacity() const;
+    
+    void *get_ptr() const;
 protected:
     void* realloc(int type_sz);
     int sz = 0; 
@@ -25,6 +27,9 @@ MemoryHelper::~MemoryHelper() {
 
 int MemoryHelper::size() const {return sz;};
 int MemoryHelper::capacity() const {return cap;};
+void *
+MemoryHelper::get_ptr() const {return static_cast<void *>(ptr);};
+
 
 void* 
 MemoryHelper::realloc(int type_sz) {
@@ -50,7 +55,7 @@ MemoryHelper::realloc(int type_sz) {
 class IntVector: public MemoryHelper
 {
 public:
-    IntVector();
+    IntVector() = default;
     IntVector(const IntVector&);
 
     IntVector& operator=(const IntVector&);
@@ -59,17 +64,16 @@ public:
     const int& operator[](int) const;
 
     void insert(int);
-    int* get_ptr() {return ptr;};
+    int* get_ptr() {
+        return static_cast<int*>(MemoryHelper::get_ptr());
+    };
 private:
-    int *ptr;
 };
-IntVector::IntVector(): ptr(nullptr) {};
 void 
 IntVector::insert(int num) {
-    ptr = static_cast<int*>(realloc(sizeof(int)));
-    new (&(ptr[sz - 1])) int(num);
+    int *iptr = static_cast<int*>(realloc(sizeof(int)));
+    new (&(iptr[sz - 1])) int(num);
 }
-
 
 
 int
