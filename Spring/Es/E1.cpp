@@ -1,6 +1,8 @@
 #include <iostream>
 #include <cstring>
 //created 1:00 14.03
+//end work 4:40 14.03
+//14:30 - 
 class MemoryHelper
 {
 public:
@@ -11,19 +13,19 @@ public:
 
     int size() const;
     int capacity() const;
-    
     void *get_ptr() const;
-protected:
-    ~MemoryHelper();
+
     void* meminc(int type_sz);
+    
+    ~MemoryHelper();
+protected:
     int sz; 
     int cap; 
-private:
     char *ptr;
     int bytes_cap;
     int bytes_sz;
 
-    enum { START_SZ = 10000 };
+    enum { START_SZ = 2 };
 };
 
 MemoryHelper::MemoryHelper(): 
@@ -35,11 +37,13 @@ MemoryHelper::MemoryHelper(const MemoryHelper& other) {
     cap = other.cap;
     bytes_cap = other.bytes_cap;
     bytes_sz = other.bytes_sz;
-
-    ptr = new char[bytes_cap];
+    
     if (other.ptr != nullptr) {
+        ptr = new char[bytes_cap];
         std::memcpy(ptr, other.ptr, bytes_sz);
-    }
+    } else {
+        ptr = nullptr;
+    } 
 }
 
 MemoryHelper& 
@@ -94,9 +98,10 @@ MemoryHelper::meminc(int type_sz) {
 }
 
 
-class IntVector: public MemoryHelper
+class IntVector: private MemoryHelper
 {
 public:
+    using MemoryHelper::size;
     int& operator[](int);
     const int& operator[](int) const;
     void insert(int);
@@ -120,9 +125,10 @@ IntVector::operator[](int pos) const {
 }
 
 
-class DoubleVector: public MemoryHelper
+class DoubleVector: private MemoryHelper
 {
 public:
+    using MemoryHelper::size;
     double& operator[](int);
     const double& operator[](int) const;
     void insert(double);
@@ -145,14 +151,43 @@ DoubleVector::operator[](int pos) const {
 }
 
 
-class IntVectorVector: public MemoryHelper
+class IntVectorVector: private MemoryHelper
 {
 public:
+    IntVectorVector() = default;
+    IntVectorVector(const IntVectorVector&);
+    IntVectorVector operator=(const IntVectorVector&); 
+
+    using MemoryHelper::size;
     IntVector& operator[](int);
     const IntVector& operator[](int) const;
     void insert(const IntVector&);
     ~IntVectorVector();
 };
+
+IntVectorVector::IntVectorVector(const IntVectorVector& v):
+    MemoryHelper(v)
+{
+    IntVector* this_ptr = (static_cast<IntVector*>(get_ptr()));
+    IntVector* v_ptr = (static_cast<IntVector*>(v.get_ptr()));
+
+    IntVector temp;
+
+    for (int i = 0; i < v.size(); i++) {
+        this_ptr = IntVector(*v_ptr++);
+        std::cout << "gang ";
+    }
+    std::cout << std::endl;
+}
+
+IntVectorVector IntVectorVector::operator=(const IntVectorVector& v) {
+    if (this == &v) {
+        return *this;
+    }
+
+
+    return *this;
+}
 
 void 
 IntVectorVector::insert(const IntVector& vec) {
@@ -178,7 +213,7 @@ IntVectorVector::~IntVectorVector() {
 }
 
 
-#ifdef _main
+//#ifdef _main
 int
 main(){
     IntVector v;
@@ -195,8 +230,42 @@ main(){
     std::cout << m[0][0] << ' ' << m[0][1] << std::endl;
     // 2 3 0
     std::cout << v.size() << ' ' << m.size() << ' ' << m[1].size() << std::endl;
-            
 
+    std::cout << "NEW TESTS:" << std::endl;
+
+/*
+    IntVector v1(v);
+    for (int i = 0; i < v1.size(); ++i) {
+        std::cout << v1[i] << ' ';
+    }
+    std::cout << std::endl;
+*/
+
+    IntVectorVector m1(m);
+    if (&m[0] == &m1[0]) {
+        std::cout << "bad..." << std::endl;
+    }
+    for (int i = 0; i < m1.size(); ++i) {
+        for (int j = 0; j < m1[i].size(); ++j) {
+            std::cout << m1[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+    m1[1].insert(123);
+    
+    for (int i = 0; i < m1.size(); ++i) {
+        for (int j = 0; j < m1[i].size(); ++j) {
+            std::cout << m1[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+
+    for (int i = 0; i < m.size(); ++i) {
+        for (int j = 0; j < m[i].size(); ++j) {
+            std::cout << m[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
     return 0;
 }
-#endif
+//#endif
