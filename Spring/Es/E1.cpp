@@ -1,8 +1,9 @@
 #include <iostream>
 #include <cstring>
 //created 1:00 14.03
-//end work 4:40 14.03
-//14:30 - 
+//1:00 - 4:40 (14.03)
+//14:30 - 16:00 (15.03)
+//21:30 - 
 class MemoryHelper
 {
 public:
@@ -25,7 +26,7 @@ protected:
     int bytes_cap;
     int bytes_sz;
 
-    enum { START_SZ = 2 };
+    enum { START_SZ = 1000 };
 };
 
 MemoryHelper::MemoryHelper(): 
@@ -57,9 +58,11 @@ MemoryHelper::operator= (const MemoryHelper& other) {
     bytes_sz = other.bytes_sz;
 
     delete[] ptr;
-    ptr = new char[bytes_cap];
     if (other.ptr != nullptr) {
+        ptr = new char[bytes_cap];
         std::memcpy(ptr, other.ptr, bytes_sz);
+    } else {
+        ptr = nullptr;
     }
     return *this;
 }
@@ -171,20 +174,23 @@ IntVectorVector::IntVectorVector(const IntVectorVector& v):
     IntVector* this_ptr = (static_cast<IntVector*>(get_ptr()));
     IntVector* v_ptr = (static_cast<IntVector*>(v.get_ptr()));
 
-    IntVector temp;
-
     for (int i = 0; i < v.size(); i++) {
-        this_ptr = IntVector(*v_ptr++);
-        std::cout << "gang ";
+        new (&this_ptr[i]) IntVector(v_ptr[i]);
     }
-    std::cout << std::endl;
 }
 
 IntVectorVector IntVectorVector::operator=(const IntVectorVector& v) {
+    MemoryHelper::operator=(v);
     if (this == &v) {
         return *this;
     }
 
+    IntVector* this_ptr = (static_cast<IntVector*>(get_ptr()));
+    IntVector* v_ptr = (static_cast<IntVector*>(v.get_ptr()));
+    
+    for (int i = 0; i < v.size(); i++) {
+        new (&this_ptr[i]) IntVector(v_ptr[i]);
+    }
 
     return *this;
 }
@@ -213,45 +219,25 @@ IntVectorVector::~IntVectorVector() {
 }
 
 
-//#ifdef _main
+#ifdef _main
 int
 main(){
     IntVector v;
     v.insert(10);
     v.insert(20);
+
     IntVectorVector m;
     m.insert(v);
-    m[0][0] = 30;
     m.insert(IntVector());
-    m.insert(IntVector());
-    // 10 20
-    std::cout << v[0] << ' ' << v[1] << std::endl;
-    // 30 20
-    std::cout << m[0][0] << ' ' << m[0][1] << std::endl;
-    // 2 3 0
-    std::cout << v.size() << ' ' << m.size() << ' ' << m[1].size() << std::endl;
+    m.insert(IntVector(v));
 
-    std::cout << "NEW TESTS:" << std::endl;
+    IntVectorVector m1;
+    m1 = m;
 
-/*
-    IntVector v1(v);
-    for (int i = 0; i < v1.size(); ++i) {
-        std::cout << v1[i] << ' ';
-    }
-    std::cout << std::endl;
-*/
-
-    IntVectorVector m1(m);
-    if (&m[0] == &m1[0]) {
-        std::cout << "bad..." << std::endl;
-    }
-    for (int i = 0; i < m1.size(); ++i) {
-        for (int j = 0; j < m1[i].size(); ++j) {
-            std::cout << m1[i][j] << ' ';
-        }
-        std::cout << std::endl;
-    }
+    m1[0].insert(123);
     m1[1].insert(123);
+    m1[2].insert(123);
+    std::cout << "=================" << std::endl;
     
     for (int i = 0; i < m1.size(); ++i) {
         for (int j = 0; j < m1[i].size(); ++j) {
@@ -259,6 +245,7 @@ main(){
         }
         std::cout << std::endl;
     }
+    std::cout << "=================" << std::endl;
 
     for (int i = 0; i < m.size(); ++i) {
         for (int j = 0; j < m[i].size(); ++j) {
@@ -266,6 +253,13 @@ main(){
         }
         std::cout << std::endl;
     }
+    std::cout << "=================" << std::endl;
+
+    IntVectorVector a;
+    IntVectorVector b(a);
+    IntVectorVector c;
+    c=a;
+    c=c=c=c=c;
     return 0;
 }
-//#endif
+#endif
