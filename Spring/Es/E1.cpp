@@ -1,9 +1,9 @@
 #include <iostream>
 #include <cstring>
 //created 1:00 14.03
-//1:00 - 4:40 (14.03)
-//14:30 - 16:00 (15.03)
-//21:30 - 
+//1:00 - 4:40 (14.03)      -- 3:40
+//14:30 - 16:00 (15.03)    -- 1:30
+//21:30 - 23:00 (15.03)    -- 1:30
 class MemoryHelper
 {
 public:
@@ -159,7 +159,7 @@ class IntVectorVector: private MemoryHelper
 public:
     IntVectorVector() = default;
     IntVectorVector(const IntVectorVector&);
-    IntVectorVector operator=(const IntVectorVector&); 
+    IntVectorVector& operator=(const IntVectorVector&); 
 
     using MemoryHelper::size;
     IntVector& operator[](int);
@@ -179,7 +179,8 @@ IntVectorVector::IntVectorVector(const IntVectorVector& v):
     }
 }
 
-IntVectorVector IntVectorVector::operator=(const IntVectorVector& v) {
+IntVectorVector&
+IntVectorVector::operator=(const IntVectorVector& v) {
     MemoryHelper::operator=(v);
     if (this == &v) {
         return *this;
@@ -233,7 +234,6 @@ main(){
 
     IntVectorVector m1;
     m1 = m;
-
     m1[0].insert(123);
     m1[1].insert(123);
     m1[2].insert(123);
@@ -255,11 +255,12 @@ main(){
     }
     std::cout << "=================" << std::endl;
 
+
+
     IntVectorVector a;
-    IntVectorVector b(a);
-    IntVectorVector c;
-    c=a;
-    c=c=c=c=c;
+    a.insert(IntVector());
+    a[0].insert(1);
+    a = a = a = a = a = a;
     return 0;
 }
 #endif
