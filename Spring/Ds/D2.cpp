@@ -12,7 +12,7 @@ public:
     DynArray& operator=(const DynArray &);
 
     int& operator[](int idx);
-    const int& operator[](int idx) const;
+    int operator[](int idx) const;
 
     int size() const;
 
@@ -25,9 +25,10 @@ private:
     enum { INIT_SZ = 100 }; 
 };
 DynArray::DynArray(): arr(nullptr), cap(0), sz(0) {}
-DynArray::DynArray(const DynArray &d_arr) {        
-    cap = d_arr.cap;
-    sz = d_arr.sz;
+DynArray::DynArray(const DynArray &d_arr):
+    cap(d_arr.cap),
+    sz(d_arr.sz) 
+{        
     arr = new int[cap];
     for (int i = 0; i < sz; ++i) {
         arr[i] = d_arr[i];
@@ -54,17 +55,11 @@ DynArray::operator=(const DynArray &d_arr) {
 
 int& 
 DynArray::operator[](int idx) {
-    if (idx >= sz) {
-        throw "Out of bound";
-    }
     return arr[idx];
 }
 
-const int& 
+int
 DynArray::operator[](int idx) const {
-    if (idx >= sz) {
-        throw "Out of bound";
-    }
     return arr[idx];
 }
 
@@ -111,16 +106,25 @@ namespace iterators
         const int& operator*() const;
         InputIterator operator++(int);
         std::istream *stream() const;
+        bool fail() const;
     private:
         int num;
         std::istream *input;
+        bool failed;
     };
 
-    InputIterator::InputIterator(): num(0), input(nullptr) {};
-    InputIterator::InputIterator(std::istream &_input): input(&_input) {
-        if (!((*input) >> this->num)) {
-            input = nullptr;
-        }
+    InputIterator::InputIterator(): 
+        num(0), 
+        input(nullptr), 
+        failed(true) 
+    {
+    }
+
+    InputIterator::InputIterator(std::istream &_input): 
+        input(&_input) 
+    {
+        (*input) >> this->num;
+        failed = input->fail();
     }
 
     const int& InputIterator::operator*() const {
@@ -130,29 +134,24 @@ namespace iterators
     InputIterator 
     InputIterator::operator++(int) {
         InputIterator temp(*this);
-        //if (input == nullptr) {
-        //   throw "iterator`s stream closed";
-        //}
         
-        if (!((*input) >> num)) {
-            input = nullptr;
-        }
+        (*input) >> this->num;
+        failed = input->fail();
 
         return temp;
     }
     std::istream *InputIterator::stream() const {
         return input;
     }
+    bool InputIterator::fail() const {
+        return failed;
+    }
 
 
     bool operator!= (const InputIterator &left, const InputIterator &right) {
-        if ((left.stream() == nullptr) && (right.stream() == nullptr)) {
+        if (left.fail() == right.fail()) {
             return false;
         }
-        if ((left.stream() == nullptr) || (right.stream() == nullptr)) {
-            return true;
-        }
-
         //need checking two streams
         return true;
     }
@@ -172,9 +171,17 @@ namespace iterators
         containers::DynArray &arr;
         int pos;
     };
-    InserterIterator::InserterIterator(containers::DynArray &d_arr): arr(d_arr), pos(0) {}
+    InserterIterator::InserterIterator(containers::DynArray &d_arr): 
+        arr(d_arr), 
+        pos(0) 
+    {
+    }
 
-    InserterIterator::InserterIterator(const InserterIterator &iter): arr(iter.arr), pos(iter.pos) {}
+    InserterIterator::InserterIterator(const InserterIterator &iter): 
+        arr(iter.arr), 
+        pos(iter.pos) 
+    {
+    }
 
     InserterIterator& 
     InserterIterator::operator= (const InserterIterator &iter) {
@@ -185,15 +192,10 @@ namespace iterators
 
     int& 
     InserterIterator::operator* () const {
-        try
-        {
-            return this->arr[pos];
-        }
-        catch(const char *er)
-        {
+        if (pos >= arr.size()) {
             arr.expansion(pos + 1);
-            return this->arr[pos];
         }
+        return this->arr[pos];
     } 
 
     InserterIterator 
