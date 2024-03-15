@@ -12,8 +12,6 @@ namespace equations
     public:
         IntVariable();
 
-        Expression operator-();
-
         int get_value() const;
         void set_value(int);
     private:
@@ -40,8 +38,6 @@ namespace equations
         Expression(const Expression& exp) = default;
         Expression(bool is_good, bool just_num, int a, int b, IntVariable *var);
 
-        Expression operator-() const;
-
         bool good() const;
         void set_good(bool);
 
@@ -54,7 +50,7 @@ namespace equations
         int get_b() const;
         void set_b(int);
 
-        IntVariable *get_var() const;
+        IntVariable& get_var() const;
         void set_var(IntVariable *);
     private:
         bool is_good = true;
@@ -68,22 +64,22 @@ namespace equations
     Expression::Expression(int num):just_num(true), a(0), b(num) {}
     Expression::Expression(IntVariable &x):just_num(false), var(&x) {}
     Expression::Expression(bool _is_good, bool _just_num, int _a, int _b, IntVariable *_var):
-        is_good(_is_good), just_num(_just_num), a(_a), b(_b), var(_var) {};
+        is_good(_is_good), just_num(_just_num), a(_a), b(_b), var(_var) {}
 
     Expression operator+(const Expression &l, const Expression &r) {
         bool is_good = l.good() && r.good();
         bool just_num = l.is_num() && r.is_num();
 
         if ((!(l.is_num())) && (!(r.is_num())) 
-            && (l.get_var() != r.get_var())){
+            && (&l.get_var() != &r.get_var())){
             is_good = false;
         }
 
         IntVariable *var = nullptr;
         if (l.is_num()) {
-            var = r.get_var();
+            var = &r.get_var();
         } else {
-            var = l.get_var();
+            var = &l.get_var();
         }
 
         int a = l.get_a() + r.get_a();
@@ -100,9 +96,9 @@ namespace equations
         }
         IntVariable *var = nullptr;
         if (l.is_num()) {
-            var = r.get_var();
+            var = &r.get_var();
         } else {
-            var = l.get_var();
+            var = &l.get_var();
         }
 
         //(ax+b)(cx+d) = acx^2 + (ad+bc)x + bd
@@ -113,8 +109,8 @@ namespace equations
 
         return Expression(is_good, just_num, a, b, var);
     }
-    Expression Expression::operator-() const {
-        Expression temp(*this);
+    Expression operator-(const Expression &exp) {
+        Expression temp(exp);
         temp.set_a(-temp.get_a());
         temp.set_b(-temp.get_b());
         return temp;
@@ -123,39 +119,38 @@ namespace equations
         return l + (-r);
     }
 
-    bool Expression::good() const {return is_good;};
-    void Expression::set_good(bool _is_good) {is_good = _is_good;};
+    bool Expression::good() const {return is_good;}
+    void Expression::set_good(bool _is_good) {is_good = _is_good;}
 
-    bool Expression::is_num() const {return just_num;};
-    void Expression::set_is_num(bool _just_num) {just_num = _just_num;};
+    bool Expression::is_num() const {return just_num;}
+    void Expression::set_is_num(bool _just_num) {just_num = _just_num;}
 
-    int Expression::get_a() const {return a;};
-    void Expression::set_a(int _a) {a = _a;};
+    int Expression::get_a() const {return a;}
+    void Expression::set_a(int _a) {a = _a;}
 
-    int Expression::get_b() const {return b;};
-    void Expression::set_b(int _b) {b = _b;};
+    int Expression::get_b() const {return b;}
+    void Expression::set_b(int _b) {b = _b;}
 
-    IntVariable *Expression::get_var() const {return var;};
-    void Expression::set_var(IntVariable *_var) {var = _var;};
+    IntVariable &Expression::get_var() const {return *var;}
+    void Expression::set_var(IntVariable *_var) {var = _var;}
 
     class Equation
     {
     public:
         Equation(const Expression &, const Expression &);
 
-        Expression get_l() const;
-        Expression get_r() const;
+        const Expression& get_l() const;
+        const Expression& get_r() const;
     private:
         Expression left;
         Expression right;
     };
     Equation::Equation(const Expression &l, const Expression &r):left(l), right(r) {}
     Equation operator== (const Expression &l, const Expression &r) {
-        Equation eq(l,r);
-        return eq;
+        return Equation(l,r);
     } 
-    Expression Equation::get_l() const {return left;};
-    Expression Equation::get_r() const {return right;};
+    const Expression& Equation::get_l() const {return left;}
+    const Expression& Equation::get_r() const {return right;}
 
 
     int solve(const Equation &eq) {
@@ -165,7 +160,7 @@ namespace equations
         }
         //Check same variable in both sides
         if ((!(eq.get_l().is_num())) && (!(eq.get_r().is_num())) 
-            && (eq.get_l().get_var() != eq.get_r().get_var())){
+            && (&eq.get_l().get_var() != &eq.get_r().get_var())){
             return 1;
         }
         //Check that a != 0 in equation
@@ -177,17 +172,13 @@ namespace equations
             return 1;
         }
         if (eq.get_l().is_num()) {
-            eq.get_r().get_var()->set_value((eq.get_l().get_b() - eq.get_r().get_b()) / 
+            eq.get_r().get_var().set_value((eq.get_l().get_b() - eq.get_r().get_b()) / 
                 (eq.get_r().get_a() - eq.get_l().get_a()));
         } else {
-            eq.get_l().get_var()->set_value((eq.get_r().get_b() - eq.get_l().get_b()) / 
+            eq.get_l().get_var().set_value((eq.get_r().get_b() - eq.get_l().get_b()) / 
                 (eq.get_l().get_a() - eq.get_r().get_a()));
         }
         return 0;        
-    }
-
-    Expression IntVariable::operator-() {
-        return -(Expression(*this));
     }
 
 } 
@@ -207,7 +198,7 @@ int main()
 {
     equations::IntVariable x,y;
 
-    std::cout << "Test #1 " << std::endl << (test(x == 1, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
+    std::cout << "Test #1 " << std::endl << (test(-x == 1, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
     std::cout << "Test #2 " << std::endl << (test(x + 1 == 123, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
     std::cout << "Test #3 " << std::endl << (test(2*x == 2, 0) == 0 ? "passed " : "ERROR!!! ") << std::endl;
     std::cout << "Test #4 " << std::endl << (test(x*x - 1 == 2, 1) == 0 ? "passed " : "ERROR!!! ") << std::endl;
