@@ -18,5 +18,5 @@ main() {
     std::cout << "~B()" << std::endl;
     std::cout << "~A()" << std::endl;
     std::cout << "~D()" << std::endl;
-    return 0;
+    return 0;      
 }
