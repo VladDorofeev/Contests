@@ -4,6 +4,8 @@
 //1:00 - 4:40 (14.03)      -- 3:40
 //14:30 - 16:00 (15.03)    -- 1:30
 //21:30 - 23:00 (15.03)    -- 1:30
+//20:30 - 21:00 (18.03)    -- 0:30
+//Summary = 7:10 
 class MemoryHelper
 {
 public:
@@ -33,12 +35,12 @@ MemoryHelper::MemoryHelper():
     sz(0), cap(0), ptr(nullptr), bytes_cap(0), bytes_sz(0) 
 {};
 
-MemoryHelper::MemoryHelper(const MemoryHelper& other) {
-    sz = other.sz;
-    cap = other.cap;
-    bytes_cap = other.bytes_cap;
-    bytes_sz = other.bytes_sz;
-    
+MemoryHelper::MemoryHelper(const MemoryHelper& other) 
+    : sz(other.sz)
+    , cap(other.cap)
+    , bytes_cap(other.bytes_cap)
+    , bytes_sz(other.bytes_sz)
+{
     if (other.ptr != nullptr) {
         ptr = new char[bytes_cap];
         std::memcpy(ptr, other.ptr, bytes_sz);
@@ -181,11 +183,21 @@ IntVectorVector::IntVectorVector(const IntVectorVector& v):
 
 IntVectorVector&
 IntVectorVector::operator=(const IntVectorVector& v) {
-    MemoryHelper::operator=(v);
+    //If we have same object
     if (this == &v) {
         return *this;
     }
 
+    //Clear old IntVector in this
+    IntVector *vptr = static_cast<IntVector*>(get_ptr());
+    for (int i = 0; i < this->size(); i++) {
+        vptr[i].~IntVector();
+    }
+
+    //Call base operator =
+    MemoryHelper::operator=(v);
+
+    //Create new IntVector (copy from IntVectorVector v)
     IntVector* this_ptr = (static_cast<IntVector*>(get_ptr()));
     IntVector* v_ptr = (static_cast<IntVector*>(v.get_ptr()));
     
@@ -223,44 +235,62 @@ IntVectorVector::~IntVectorVector() {
 #ifdef _main
 int
 main(){
-    IntVector v;
-    v.insert(10);
-    v.insert(20);
+    IntVector a;
+    a.insert(1);
+    a.insert(2);
+    a.insert(3);
+    a.insert(4);
 
-    IntVectorVector m;
-    m.insert(v);
-    m.insert(IntVector());
-    m.insert(IntVector(v));
+    IntVectorVector v;
+    v.insert(a);
+    v.insert(a);
+    v.insert(a);
 
-    IntVectorVector m1;
-    m1 = m;
-    m1[0].insert(123);
-    m1[1].insert(123);
-    m1[2].insert(123);
-    std::cout << "=================" << std::endl;
-    
-    for (int i = 0; i < m1.size(); ++i) {
-        for (int j = 0; j < m1[i].size(); ++j) {
-            std::cout << m1[i][j] << ' ';
+    for (int i = 0; i < v.size(); ++i) {
+        for (int j = 0; j < v.size(); ++j) {
+            std::cout << v[i][j] << ' ';
         }
         std::cout << std::endl;
     }
-    std::cout << "=================" << std::endl;
+    std::cout << std::endl;
 
-    for (int i = 0; i < m.size(); ++i) {
-        for (int j = 0; j < m[i].size(); ++j) {
-            std::cout << m[i][j] << ' ';
+    IntVectorVector q(v);
+    for (int i = 0; i < v.size(); ++i) {
+        for (int j = 0; j < v.size(); ++j) {
+            std::cout << q[i][j] << ' ';
         }
         std::cout << std::endl;
     }
-    std::cout << "=================" << std::endl;
+    std::cout << std::endl;
 
+    q = IntVectorVector();
+    q = v;
+    for (int i = 0; i < v.size(); ++i) {
+        for (int j = 0; j < v.size(); ++j) {
+            std::cout << q[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    q = v;
+    for (int i = 0; i < v.size(); ++i) {
+        for (int j = 0; j < v.size(); ++j) {
+            std::cout << q[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 
+    q=q=q=q=q;
+    q = IntVectorVector(v);
+    for (int i = 0; i < v.size(); ++i) {
+        for (int j = 0; j < v.size(); ++j) {
+            std::cout << q[i][j] << ' ';
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 
-    IntVectorVector a;
-    a.insert(IntVector());
-    a[0].insert(1);
-    a = a = a = a = a = a;
     return 0;
 }
 #endif
