@@ -31,6 +31,7 @@ bool Person::man() const {return _man;}
 
 
 
+
 class PersonView
 {
 public:
@@ -55,7 +56,7 @@ public:
 
     Iterator begin() const;
     Iterator end() const;
-private:
+protected:
     bool (*selection_bias) (const Person&);
     const Person *begin_ptr;
     int sz;
@@ -118,14 +119,22 @@ PersonView::Iterator PersonView::begin() const {
     return Iterator(selection_bias, begin_ptr, sz);
 }
 PersonView::Iterator PersonView::end() const {
+    
     return Iterator(selection_bias, begin_ptr + sz, sz);
 }
 
+bool man_func (const Person &obj) {
+    return obj.man();
+}
+bool young_func (const Person &obj) {
+    return ((obj.age() >= 18) && ((obj.age() <= 35)));
+}
 
 class MenPersonView : public PersonView
 {
 public:
     MenPersonView(bool (*) (const Person&), const Person *, int sz);
+    Iterator begin() const;
 };
 
 MenPersonView::MenPersonView(bool (*_sel_bias) (const Person&), const Person *_ptr, int _sz) :
@@ -133,11 +142,25 @@ MenPersonView::MenPersonView(bool (*_sel_bias) (const Person&), const Person *_p
 {
 }
 
+PersonView::Iterator MenPersonView::begin() const {
+    const Person *temp = begin_ptr;
+    int i = 0;
+    for (; i < sz; ++i) {
+        if (man_func(*temp)){
+            break;
+        }
+        temp++;
+    }
+    return Iterator(selection_bias, temp, sz - i);
+}
+
+
 
 class YoungPersonView : public PersonView
 {
 public:
     YoungPersonView(bool (*) (const Person&), const Person *, int sz);
+    Iterator begin() const;
 };
 
 YoungPersonView::YoungPersonView(bool (*_sel_bias) (const Person&), const Person *_ptr, int _sz) :
@@ -145,6 +168,17 @@ YoungPersonView::YoungPersonView(bool (*_sel_bias) (const Person&), const Person
 {
 }
 
+PersonView::Iterator YoungPersonView::begin() const {
+    const Person *temp = begin_ptr;
+    int i = 0;
+    for (; i < sz; ++i) {
+        if (young_func(*temp)){
+            break;
+        }
+        temp++;
+    }
+    return Iterator(selection_bias, temp, sz - i);
+}
 
 class Persons
 {
@@ -228,44 +262,27 @@ void Persons::add(const Person& person) {
     persons[sz++] = person;
 }
 
-bool man_func (const Person &obj) {
-    return obj.man();
-}
+
 MenPersonView Persons::men() 
 {
-    Person *temp = persons;
-    int i = 0;
-    for (; i < sz; ++i) {
-        if (man_func(*temp++)){
-            break;
-        }
-    }
-    return MenPersonView(man_func, temp, sz - i);
+    return MenPersonView(man_func, persons, sz);
 }
 
-bool young_func (const Person &obj) {
-    return ((obj.age() >= 18) && ((obj.age() <= 35)));
-}
+
 YoungPersonView Persons::young() 
 {
-    Person *temp = persons;
-    int i = 0;
-    for (; i < sz; ++i) {
-        if (young_func(*temp++)){
-            break;
-        }
-    }
-
-    return YoungPersonView(young_func, temp, sz - i);
+    return YoungPersonView(young_func, persons, sz);
 }
 
+
+#ifdef _main
 int
 main(void) {
     Persons org;
-    org.add(Person("Ivanov", 220, true));
-    org.add(Person("Ivanova", 320, false));
-    org.add(Person("Petrov", 510, true));
-    org.add(Person("Sidorov", 312, true));
+    //org.add(Person("Ivanov", 20, true));
+    //org.add(Person("Ivanova", 20, true));
+    //org.add(Person("Petrov", 20, true));
+    //org.add(Person("Sidorov", 20, true));
 
     std::cout << "Men:" << std::endl;
     MenPersonView men = org.men();
@@ -281,3 +298,4 @@ main(void) {
 
     return 0;
 }
+#endif
