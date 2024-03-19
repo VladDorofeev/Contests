@@ -3,6 +3,7 @@
 //Created 21:12 (18.03)
 //0:30 +
 //23:11 -- 1:30 == 2:20
+//09:15 -- 
 
 class Person
 {
@@ -28,7 +29,6 @@ Person::Person(const char *name, int age, bool man):
 const char *Person::name() const {return _name;}
 int Person::age() const {return _age;}
 bool Person::man() const {return _man;}
-
 
 
 
@@ -90,7 +90,7 @@ PersonView::Iterator& PersonView::Iterator::operator++() {
 
     for (ptr++; ptr != begin + sz; ptr++) {
         if (selection_bias(*ptr)) {
-            break;////////////////////////////////////////////////trouble
+            break;
         }
     }
 
@@ -119,8 +119,7 @@ PersonView::Iterator PersonView::begin() const {
     return Iterator(selection_bias, begin_ptr, sz);
 }
 PersonView::Iterator PersonView::end() const {
-    
-    return Iterator(selection_bias, begin_ptr + sz, sz);
+    return Iterator(selection_bias, begin_ptr + sz, 0);
 }
 
 bool man_func (const Person &obj) {
@@ -154,8 +153,6 @@ PersonView::Iterator MenPersonView::begin() const {
     return Iterator(selection_bias, temp, sz - i);
 }
 
-
-
 class YoungPersonView : public PersonView
 {
 public:
@@ -179,6 +176,7 @@ PersonView::Iterator YoungPersonView::begin() const {
     }
     return Iterator(selection_bias, temp, sz - i);
 }
+
 
 class Persons
 {
@@ -279,10 +277,10 @@ YoungPersonView Persons::young()
 int
 main(void) {
     Persons org;
-    //org.add(Person("Ivanov", 20, true));
-    //org.add(Person("Ivanova", 20, true));
-    //org.add(Person("Petrov", 20, true));
-    //org.add(Person("Sidorov", 20, true));
+    org.add(Person("Ivanov", 20, true));
+    org.add(Person("Ivanova", 20, true));
+    org.add(Person("Petrov", 20, true));
+    org.add(Person("Sidorov", 20, true));
 
     std::cout << "Men:" << std::endl;
     MenPersonView men = org.men();
