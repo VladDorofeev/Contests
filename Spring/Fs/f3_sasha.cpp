@@ -21,7 +21,7 @@ namespace equations
         char* name_var;
     };
 
-    class PrinterVisitor;
+    class Visitor;
 
     class Expression {
     public:
@@ -30,10 +30,11 @@ namespace equations
         Expression(Expression const&);
         Expression(IntVariable&);
         Expression(int);
-        Expression* get_root_pt() const;
-        virtual void get_info(PrinterVisitor const&, std::ostream&) const;
-        virtual int priority() const;
         virtual ~Expression();
+
+        Expression* get_root_pt() const;
+        virtual void get_info(Visitor&) const;
+        virtual int priority() const;
         virtual Expression*  clone() const;
     private:
         Expression* _exp_root;
@@ -43,8 +44,9 @@ namespace equations
     class VariableExpression : public Expression {
     public:
         VariableExpression(IntVariable&);
+
         IntVariable const& get_var() const; 
-        void get_info(PrinterVisitor const&, std::ostream&) const override;
+        void get_info(Visitor&) const override;
         Expression* clone() const override ;
     private:
         IntVariable& _var;
@@ -54,8 +56,9 @@ namespace equations
     class LiteralExpression : public Expression {
     public:
         LiteralExpression(int);
+
         int get_num() const;
-        void get_info(PrinterVisitor const&, std::ostream&) const override;
+        void get_info(Visitor&) const override;
         Expression* clone() const override;
     private:
         int _num;
@@ -66,8 +69,9 @@ namespace equations
     public:
         NegativeExpression(Expression*);
         ~NegativeExpression();
+
         Expression const* get_exp_pt() const;
-        void get_info(PrinterVisitor const&, std::ostream&) const override;
+        void get_info(Visitor&) const override;
         int priority() const override;
         Expression* clone() const override;
     private:
@@ -79,10 +83,11 @@ namespace equations
     public:
         DoubleVarExpression(Expression*, Expression*, char);
         ~DoubleVarExpression();
+
         Expression const* get_left_exp_pt() const;
         Expression const* get_right_exp_pt() const;
         char get_oper() const;
-        void get_info(PrinterVisitor const&, std::ostream&) const final;
+        void get_info(Visitor&) const final;
         int priority() const final;
         Expression* clone() const final;
     private:
@@ -115,37 +120,43 @@ namespace equations
         DivisionExpression(Expression*, Expression*);
     };
 
+
     class PrettyPrinter;
 
     class ExpOutPut {
     public:
-        ExpOutPut(Expression const&, PrettyPrinter const&);
+        ExpOutPut(Expression const&, PrettyPrinter *);
         ExpOutPut(ExpOutPut const&);
+
         Expression const& get_exp_pt() const;
-        PrettyPrinter const& get_printer() const;
+        PrettyPrinter * get_printer() const;
     private:
         Expression const& _exp;
-        PrettyPrinter const& _printer;
+        PrettyPrinter* _printer_pt;
     };
 
-    class PrinterVisitor {
+    class Visitor {
     public:
-        virtual void print_info(Expression const&, std::ostream&) const = 0;
-        virtual void print_info(VariableExpression const&, std::ostream&) const = 0;
-        virtual void print_info(LiteralExpression const&, std::ostream&) const = 0;
-        virtual void print_info(NegativeExpression const&, std::ostream&) const = 0;
-        virtual void print_info(DoubleVarExpression const&, std::ostream&) const = 0;
-        virtual ~PrinterVisitor() = default;
+        virtual void visit(Expression const&) = 0;
+        virtual void visit(VariableExpression const&) = 0;
+        virtual void visit(LiteralExpression const&) = 0;
+        virtual void visit(NegativeExpression const&) = 0;
+        virtual void visit(DoubleVarExpression const&) = 0;
+        virtual ~Visitor() = default;
     };
 
-    class PrettyPrinter : public PrinterVisitor {
+    class PrettyPrinter : public Visitor {
     public:
-        ExpOutPut get_infix(Expression const&) const;
-        void print_info(Expression const&, std::ostream&) const final;
-        void print_info(VariableExpression const&, std::ostream&) const final;
-        void print_info(LiteralExpression const&, std::ostream&) const final;
-        void print_info(NegativeExpression const&, std::ostream&) const final;
-        void print_info(DoubleVarExpression const&, std::ostream&) const final;
+        PrettyPrinter();
+        ExpOutPut get_infix(Expression const&);
+        void set_out(std::ostream&);
+        void visit(Expression const&) override;
+        void visit(VariableExpression const&) override;
+        void visit(LiteralExpression const&) override;
+        void visit(NegativeExpression const&) override;
+        void visit(DoubleVarExpression const&) override;
+    private:
+        std::ostream* _out;
     };
 }
 
@@ -187,8 +198,8 @@ equations::Expression* equations::Expression::get_root_pt() const {
 
 
 void equations::Expression::get_info
-    (equations::PrinterVisitor const& pr, std::ostream& out) const {
-    pr.print_info(*this, out);
+    (equations::Visitor& pr) const {
+    pr.visit(*this);
 }
 
 
@@ -292,8 +303,8 @@ equations::Expression* equations::LiteralExpression::clone() const {
 }
 
 void equations::LiteralExpression::get_info
-    (equations::PrinterVisitor const& pr, std::ostream& out) const {
-    pr.print_info(*this, out);
+    (equations::Visitor& pr) const {
+    pr.visit(*this);
 }
 
 
@@ -313,8 +324,8 @@ equations::Expression* equations::VariableExpression::clone() const {
 }
 
 void equations::VariableExpression::get_info
-    (equations::PrinterVisitor const& pr, std::ostream& out) const {
-    pr.print_info(*this, out);
+    (equations::Visitor& pr) const {
+    pr.visit(*this);
 }
 
 
@@ -340,8 +351,8 @@ equations::Expression* equations::NegativeExpression::clone() const {
 
 
 void equations::NegativeExpression::get_info
-    (equations::PrinterVisitor const& pr, std::ostream& out) const {
-    pr.print_info(*this, out);
+    (equations::Visitor& pr) const {
+    pr.visit(*this);
 }
 
 
@@ -387,8 +398,8 @@ equations::Expression* equations::DoubleVarExpression::clone() const {
 
 
 void equations::DoubleVarExpression::get_info
-    (equations::PrinterVisitor const& pr, std::ostream& out) const {
-    pr.print_info(*this, out);
+    (equations::Visitor& pr) const {
+    pr.visit(*this);
 }
 
 
@@ -438,16 +449,17 @@ equations::DivisionExpression::DivisionExpression(equations::Expression* left_ex
 
 //ExpOutPut impl
 
-equations::ExpOutPut::ExpOutPut(Expression const& exp, PrettyPrinter const& pr)
+
+equations::ExpOutPut::ExpOutPut(Expression const& exp, PrettyPrinter* pr)
     : _exp(exp)
-    , _printer(pr) 
+    , _printer_pt(pr) 
 {
 }
 
 
 equations::ExpOutPut::ExpOutPut(equations::ExpOutPut const& other)
     : _exp(other._exp) 
-    , _printer(other._printer)
+    , _printer_pt(other._printer_pt)
 {
 }
 
@@ -457,66 +469,76 @@ equations::Expression const& equations::ExpOutPut::get_exp_pt() const {
 }
 
 
-equations::PrettyPrinter const& equations::ExpOutPut::get_printer() const {
-    return _printer;
+equations::PrettyPrinter * equations::ExpOutPut::get_printer() const {
+    return _printer_pt;
 }
 
 
 std::ostream& operator<<(std::ostream& out, equations::ExpOutPut const& exp_out) {
-    exp_out.get_exp_pt().get_info(exp_out.get_printer(), out);
+    exp_out.get_printer()->set_out(out);
+    exp_out.get_exp_pt().get_info(*exp_out.get_printer());
     return out;
 }
 
 
 //PrettyPrinter impl
 
-equations::ExpOutPut equations::PrettyPrinter::get_infix(equations::Expression const& exp) const {
-    return equations::ExpOutPut(exp, *this);
+equations::PrettyPrinter::PrettyPrinter()
+    : _out(nullptr) 
+{
+}
+
+equations::ExpOutPut equations::PrettyPrinter::get_infix(equations::Expression const& exp) {
+    return equations::ExpOutPut(exp, this);
 } 
 
-
-void equations::PrettyPrinter::print_info(equations::Expression const& exp, std::ostream& out) const {
-    exp.get_root_pt()->get_info(*this, out);
+void equations::PrettyPrinter::set_out(std::ostream& out) {
+    _out = &out;
 }
 
 
-void equations::PrettyPrinter::print_info(equations::VariableExpression const& exp, std::ostream& out) const {
-    out << exp.get_var().show_name_var();
+void equations::PrettyPrinter::visit(equations::Expression const& exp) {
+    exp.get_root_pt()->get_info(*this);
 }
 
 
-void equations::PrettyPrinter::print_info(equations::LiteralExpression const& exp, std::ostream& out) const {
-    out << exp.get_num();
+void equations::PrettyPrinter::visit(equations::VariableExpression const& exp) {
+    *_out << exp.get_var().show_name_var();
 }
 
 
-void equations::PrettyPrinter::print_info(equations::NegativeExpression const& exp, std::ostream& out) const {
-    out << '-';
+void equations::PrettyPrinter::visit(equations::LiteralExpression const& exp) {
+    *_out << exp.get_num();
+}
+
+
+void equations::PrettyPrinter::visit(equations::NegativeExpression const& exp) {
+    *_out << '-';
     if (exp.get_exp_pt()->priority() > exp.priority()) {
-        out << '(';
+        *_out << '(';
     }
-    exp.get_exp_pt()->get_info(*this, out);
+    exp.get_exp_pt()->get_info(*this);
     if (exp.get_exp_pt()->priority() > exp.priority()) {
-        out << ')';
+        *_out << ')';
     }
 }
 
 
-void equations::PrettyPrinter::print_info(equations::DoubleVarExpression const& exp, std::ostream& out) const {
+void equations::PrettyPrinter::visit(equations::DoubleVarExpression const& exp) {
     if (exp.get_left_exp_pt()->priority() > exp.priority()) {
-        out << '(';
+        *_out << '(';
     }
-    exp.get_left_exp_pt()->get_info(*this, out);
+    exp.get_left_exp_pt()->get_info(*this);
     if (exp.get_left_exp_pt()->priority() > exp.priority()) {
-        out << ')';
+       *_out << ')';
     }
-    out << ' ' <<  exp.get_oper() << ' ';
+    *_out << ' ' <<  exp.get_oper() << ' ';
     if (exp.get_right_exp_pt()->priority() >= exp.priority()) {
-        out << '(';
+        *_out << '(';
     }
-    exp.get_right_exp_pt()->get_info(*this, out);
+    exp.get_right_exp_pt()->get_info(*this);
     if (exp.get_right_exp_pt()->priority() >= exp.priority()) {
-        out << ')';
+       *_out << ')';
     }
 }
 
