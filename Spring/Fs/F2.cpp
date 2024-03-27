@@ -3,7 +3,10 @@
 //Created (25.03)
 //20:00 - 21:30 (25.03) #First thinking, honestly 0:45 min
 //10:30 - 11:30 (26.03) #Thinking about operators and structure
-//22:20 - (26.03) #
+//22:20 - 23:40 (26.03) #Try realiztion with VirtualExpression
+//10:40 - 11:40 (27.03) #Some thinking about temporary obj
+//21:10 - 22:10 (27.03) #First OK
+//Summary 5:40
 
 namespace equations
 {
@@ -58,21 +61,33 @@ const char *IntVariable::get_name() const {return name;}
 /*==========================================*/
 /*==========================================*/
 
-class VirtualExpression 
+class Expression 
 {
 public:
-    virtual ~VirtualExpression() = default;
-    virtual int get_priority() const = 0;
-    virtual void get_infix(int priority, std::ostream &out) const = 0;
+    Expression();
+    Expression(int);
+    Expression(IntVariable&);
+    Expression(const Expression&);
+    Expression(Expression *exp);
+
+    virtual ~Expression();
+
+    virtual int get_priority() const;
+    virtual void get_infix(int priority, std::ostream &out) const;
+    virtual Expression *clone() const;
+    Expression *root() const;
 private:
+    Expression *exp_root;
 };
+
 /*==========================================*/
-class VariableExpression: public VirtualExpression 
+class VariableExpression: public Expression 
 {
 public:
     VariableExpression(IntVariable &);
     void get_infix(int priority, std::ostream &out) const;
     int get_priority() const;
+    Expression *clone() const;
 private:
     IntVariable &var;
 };
@@ -86,13 +101,19 @@ int VariableExpression::get_priority() const {return VAR_PR;}
 void VariableExpression::get_infix(int priority, std::ostream &out) const {
     out << var.get_name();
 }
+
+Expression *VariableExpression::clone() const {
+    return new VariableExpression(var);
+}
+
 /*==========================================*/
-class LiteralExpression: public VirtualExpression 
+class LiteralExpression: public Expression 
 {
 public:
     LiteralExpression(int);
     void get_infix(int priority, std::ostream &out) const;
     int get_priority() const;
+    Expression *clone() const;
 private:
     int num;
 };
@@ -103,24 +124,29 @@ LiteralExpression::LiteralExpression(int _num):
 
 int LiteralExpression::get_priority() const {return CONST_PR;}
 
-
 void LiteralExpression::get_infix(int priority, std::ostream &out) const {
     out << num;
 }
+
+Expression *LiteralExpression::clone() const {
+    return new LiteralExpression(num);
+}
+
 /*==========================================*/
-class BinaryExpression: public VirtualExpression
+class BinaryExpression: public Expression
 {
 public:
-    BinaryExpression(VirtualExpression *, VirtualExpression *);
+    BinaryExpression(Expression *, Expression *);
     ~BinaryExpression();
     void get_infix(int priority, std::ostream &out) const;
     virtual char get_operand() const = 0;
-private:
-    VirtualExpression *left;
-    VirtualExpression *right;
+
+protected:
+    Expression *left;
+    Expression *right;
 };
 
-BinaryExpression::BinaryExpression(VirtualExpression *_left, VirtualExpression *_right):
+BinaryExpression::BinaryExpression(Expression *_left, Expression *_right):
     left(_left),
     right(_right)
 {
@@ -145,83 +171,105 @@ void BinaryExpression::get_infix(int priority, std::ostream &out) const {
         out << ')';
     }
 }
+
+
 /*==========================================*/
 class SumExpression: public BinaryExpression 
 {
 public:
-    SumExpression(VirtualExpression *_left, VirtualExpression *_right);
+    SumExpression(Expression *_left, Expression *_right);
     int get_priority() const;
     char get_operand() const;
+    
+    Expression *clone() const;
 private:
 };
 
-SumExpression::SumExpression(VirtualExpression *_left, VirtualExpression *_right):
+SumExpression::SumExpression(Expression *_left, Expression *_right):
     BinaryExpression(_left, _right)
 {
 }
 int SumExpression::get_priority() const {return SUM_PR;}
 char SumExpression::get_operand() const {return '+';}
+Expression *SumExpression::clone() const {return new SumExpression(left->clone(), right->clone());}
+
 /*==========================================*/
 class SubExpression: public BinaryExpression 
 {
 public:
-    SubExpression(VirtualExpression *_left, VirtualExpression *_right);
+    SubExpression(Expression *_left, Expression *_right);
     int get_priority() const;
     char get_operand() const;
+    
+    Expression *clone() const;
 private:
 };
 
-SubExpression::SubExpression(VirtualExpression *_left, VirtualExpression *_right):
+SubExpression::SubExpression(Expression *_left, Expression *_right):
     BinaryExpression(_left, _right)
 {
 }
 int SubExpression::get_priority() const {return SUB_PR;}
 char SubExpression::get_operand() const {return '-';}
+
+Expression *SubExpression::clone() const {return new SubExpression(left->clone(), right->clone());}
+
 /*==========================================*/
 class MultiplyExpression: public BinaryExpression 
 {
 public:
-    MultiplyExpression(VirtualExpression *_left, VirtualExpression *_right);
+    MultiplyExpression(Expression *_left, Expression *_right);
     int get_priority() const;
     char get_operand() const;
+
+    Expression *clone() const;
 private:
 };
 
-MultiplyExpression::MultiplyExpression(VirtualExpression *_left, VirtualExpression *_right):
+MultiplyExpression::MultiplyExpression(Expression *_left, Expression *_right):
     BinaryExpression(_left, _right)
 {
 }
 int MultiplyExpression::get_priority() const {return MUL_PR;}
 char MultiplyExpression::get_operand() const {return '*';}
+
+Expression *MultiplyExpression::clone() const {return new MultiplyExpression(left->clone(), right->clone());}
 /*==========================================*/
 class DivisionExpression: public BinaryExpression 
 {
 public:
-    DivisionExpression(VirtualExpression *_left, VirtualExpression *_right);
+    DivisionExpression(Expression *_left, Expression *_right);
     int get_priority() const;
     char get_operand() const;
+
+    Expression *clone() const;
 private:
 };
 
-DivisionExpression::DivisionExpression(VirtualExpression *_left, VirtualExpression *_right):
+DivisionExpression::DivisionExpression(Expression *_left, Expression *_right):
     BinaryExpression(_left, _right)
 {
 }
 int DivisionExpression::get_priority() const {return DIV_PR;}
 char DivisionExpression::get_operand() const {return '/';}
+
+Expression *DivisionExpression::clone() const {return new DivisionExpression(left->clone(), right->clone());}
+
 /*==========================================*/
-class NegativeExpression: public VirtualExpression 
+class NegativeExpression: public Expression 
 {
 public:
-    NegativeExpression(VirtualExpression *);
+    NegativeExpression(Expression *);
     ~NegativeExpression();
     int get_priority() const;
     void get_infix(int priority, std::ostream &out) const;
+
+    Expression *clone() const;
 private:
-    VirtualExpression *exp;
+    Expression *exp;
 };
 
-NegativeExpression::NegativeExpression(VirtualExpression *_exp):
+NegativeExpression::NegativeExpression(Expression *_exp):
     exp(_exp)
 {
 }
@@ -236,57 +284,83 @@ void NegativeExpression::get_infix(int priority, std::ostream &out) const {
     out << "-";
     exp->get_infix(NEG_PR, out);
 }
+
+Expression *NegativeExpression::clone() const {return new NegativeExpression(exp->clone());}
+
 /*==========================================*/
 class PrettyPrinter
 {
 public:
-    const VirtualExpression & get_infix(const VirtualExpression  &exp) const;
-private:
+    const Expression & get_infix(const Expression  &exp) const;
 };
 
-const VirtualExpression & PrettyPrinter::get_infix(const VirtualExpression &exp) const {
+const Expression & PrettyPrinter::get_infix(const Expression &exp) const {
     return exp;
 }
 
-std::ostream& operator<< (std::ostream &out, const VirtualExpression &exp) {
+std::ostream& operator<< (std::ostream &out, const Expression &exp) {
     exp.get_infix(DEFAULT_PR, out);
     return out;
 }
 /*==========================================*/
+Expression::Expression() : exp_root(nullptr) {}
+Expression::Expression(int var) : exp_root(new LiteralExpression(var)) {}
+Expression::Expression(IntVariable &var) : exp_root(new VariableExpression(var)) {}
+Expression::Expression(const Expression &other) : exp_root(other.exp_root->clone()) {}
+Expression::Expression(Expression *exp) : exp_root(exp) {}
+
+Expression::~Expression() {
+    delete exp_root;
+}
+
+int Expression::get_priority() const {return exp_root->get_priority();}
+void Expression::get_infix(int priority, std::ostream &out) const {
+    exp_root->get_infix(priority, out);
+}
+
+Expression *Expression::clone() const {
+    return new Expression(exp_root->clone());
+}
+
+Expression *Expression::root() const {return exp_root;}
+
+
 /*==========================================*/
 /*==========================================*/
-class Expression : VirtualExpression
-{
-public:
-    Expression(int);
-    Expression(IntVariable&);
-    Expression(const VirtualExpression&);
-    int get_priority() const;
-    void get_infix(int priority, std::ostream &out) const;
-private:
-    const VirtualExpression &exp;
-};
-Expression::Expression(int var) : exp(LiteralExpression(var)) {}
-Expression::Expression(IntVariable &var) : exp(VariableExpression(var)) {}
-Expression::Expression(const VirtualExpression &_exp) : exp(_exp) {}
-int Expression::get_priority() const {return exp.get_priority();}
-void Expression::get_infix(int priority, std::ostream &out) const {exp.get_infix(priority, out);}
 /*==========================================*/
-Expression operator+ (const Expression& left, const Expression & right) {
-    return Expression(SumExpression(left, right));
+Expression operator+ (Expression const& left, Expression const& right) { 
+    return new SumExpression(left.root()->clone(), right.root()->clone());
+}
+
+Expression operator- (Expression const& left, Expression const& right) { 
+    return new SubExpression(left.root()->clone(), right.root()->clone());
+}
+
+Expression operator* (Expression const& left, Expression const& right) { 
+    return new MultiplyExpression(left.root()->clone(), right.root()->clone());
+}
+
+Expression operator/ (Expression const& left, Expression const& right) { 
+    return new DivisionExpression(left.root()->clone(), right.root()->clone());
+}
+
+Expression operator- (Expression const& exp) { 
+    return new NegativeExpression(exp.root()->clone());
 }
 } 
+
 
 #ifdef _main
 int main()
 {
     using namespace equations;
     IntVariable x("x");
-    // Expression expression = ((x + x) + x) * x - (7 - x);
-    Expression expression = x + x;
-    // Expression expression2 = expression - expression;
+    Expression expression = ((x + x) + x) * x - (7 - x) + -x;
+
+    std::cout << "ended!\n";
+    Expression expression2 = expression - expression;
     PrettyPrinter printer;
     std::cout << printer.get_infix(expression) << std::endl;
-    // std::cout << printer.get_infix(expression2) << std::endl;
+    std::cout << printer.get_infix(expression2) << std::endl;
 }
 #endif
