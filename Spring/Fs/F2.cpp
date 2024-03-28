@@ -6,8 +6,8 @@
 //22:20 - 23:40 (26.03) #Try realiztion with VirtualExpression
 //10:40 - 11:40 (27.03) #Some thinking about temporary obj
 //21:10 - 22:10 (27.03) #First OK (Rejected)
-//12:50 - (27.03)
-//Summary ---
+//12:50 - 13:00 (27.03) #OK add VirtualExpression
+//Summary 5:10
 
 namespace equations
 {
@@ -70,8 +70,6 @@ public:
     virtual VirtualExpression* clone() const = 0; 
 private:
 };
-
-
 /*==========================================*/
 class VariableExpression: public VirtualExpression 
 {
@@ -316,9 +314,6 @@ Expression *Expression::clone() const {
 }
 
 VirtualExpression *Expression::root() const {return exp_root;}
-
-
-/*==========================================*/
 /*==========================================*/
 class PrettyPrinter
 {
@@ -334,8 +329,6 @@ std::ostream& operator<< (std::ostream &out, const Expression &exp) {
     exp.get_infix(DEFAULT_PR, out);
     return out;
 }
-
-/*==========================================*/
 /*==========================================*/
 Expression operator+ (Expression const& left, Expression const& right) { 
     
