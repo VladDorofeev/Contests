@@ -324,11 +324,14 @@ public:
     PrettyPrinter& get_infix(const Expression &_exp);
     const Expression *get_exp() const {return exp;}
     
-    int priority = DEFAULT_PR;
+    void set_out(std::ostream *_out) {out = _out;}
+    void set_priority(int pr) {priority = pr;} 
+private:
     std::ostream *out = nullptr;
     static const Expression *exp;
-private:
+    int priority = DEFAULT_PR;
 };
+
 const Expression *PrettyPrinter::exp = nullptr;
 
 void PrettyPrinter::visit(const Expression &expression) {
@@ -346,7 +349,6 @@ void PrettyPrinter::visit(const NegativeExpression &expression) {
     expression.get_exp()->get_infix(*this);
 }
 void PrettyPrinter::visit(const BinaryExpression &expression) {
-    // std::cout << this->priority << ' ' << expression.get_priority() << std::endl;
     int exp_priority = expression.get_priority();
     bool printed = false;
     if (this->priority < exp_priority) {
@@ -375,8 +377,8 @@ PrettyPrinter& PrettyPrinter::get_infix(const Expression &_exp) {
 }
 
 std::ostream& operator<< (std::ostream &out, PrettyPrinter &printer) {
-    printer.out = &out;
-    printer.priority = DEFAULT_PR;
+    printer.set_out(&out);
+    printer.set_priority(DEFAULT_PR);
     printer.get_exp()->get_infix(printer);
     return out;
 }
@@ -405,7 +407,7 @@ Expression operator- (Expression const& exp) {
 
 
 #ifdef _main
-int main()
+int main() 
 {
     using namespace equations;
     IntVariable x("x");
