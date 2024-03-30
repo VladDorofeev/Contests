@@ -220,20 +220,6 @@ namespace no_exceptions
 
 namespace with_exceptions
 {
-    
-    enum ErrorCodes
-    {
-        SUCCESS,
-        OVERFLOWING,
-        DIVBYZERO,
-    };
-
-    static const char *errors[] =
-    {
-        [SUCCESS] = "Success",
-        [OVERFLOWING] = "Integer overflow",
-        [DIVBYZERO] = "Division by zero",
-    };
 
     class IntVariable {
     public:
@@ -336,7 +322,7 @@ namespace with_exceptions
         int right_value = right.get_value();
         if ((left_value >= 0 && right_value > INT_MAX - left_value)
             || (left_value < 0 && right_value < INT_MIN - left_value)) {
-            throw static_cast<int>(OVERFLOWING);
+            throw std::overflow_error("Integer overflow");
         }
         return left_value + right_value;
     } 
@@ -364,7 +350,7 @@ namespace with_exceptions
             || (left_value < 0 && ((right_value > 0 
             && left_value < INT_MIN / right_value)
             || (right_value < 0 && left_value < INT_MAX / right_value))))) {
-            throw static_cast<int>(OVERFLOWING);
+            throw std::overflow_error("Integer overflow");
         }
         return left_value * right_value;
     }
@@ -387,10 +373,10 @@ namespace with_exceptions
         int left_value = left.get_value();
         int right_value = right.get_value();
         if (right_value == 0) {
-            throw static_cast<int>(DIVBYZERO);
+            throw std::logic_error("Division by zero");
         }
         if (left_value == INT_MIN && right_value == -1) {
-            throw static_cast<int>(OVERFLOWING);
+            throw std::overflow_error("Integer overflow");
         }
 
         return left_value / right_value;
@@ -437,8 +423,8 @@ int main()
         try {
             value = e3.get_value();
             std::cout << value << std::endl;
-        } catch(int& err) {
-            std::cout << errors[err] << std::endl;
+        } catch(std::exception& err) {
+            std::cout << err.what() << std::endl;
         }
         x.set_value(1);
         y.set_value(INT_MAX);
@@ -446,8 +432,8 @@ int main()
         try {
             value = e4.get_value();
             std::cout << value << std::endl;
-        } catch (int& err) {
-            std::cout << errors[err] << std::endl;
+        } catch (std::exception& err) {
+            std::cout << err.what() << std::endl;
         }
         x.set_value(0);
         y.set_value(0);
@@ -455,8 +441,8 @@ int main()
         try {
             value = e5.get_value();
             std::cout << value << std::endl;
-        } catch (int& err) {
-            std::cout << errors[err] << std::endl;
+        } catch (std::exception& err) {
+            std::cout << err.what() << std::endl;
         }
     }
 }
