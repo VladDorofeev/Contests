@@ -47,16 +47,17 @@ private:
         DataArr(size_t);
         ~DataArr();
 
-        void copy(DataArr const&);
         Data*& operator[](size_t);
         Data const* const& operator[](size_t) const;
+
+        size_t size() const;
+        void copy(DataArr const&);
         void swap(DataArr&);
     private:
         Data** arr;
         size_t _size;
     };
     DataArr data_arr;
-    size_t _size;
     size_t cur_pos;
 };
 
@@ -129,6 +130,11 @@ Data const* const& BoundedStack::DataArr::operator[](size_t pos) const {
 }
 
 
+size_t BoundedStack::DataArr::size() const {
+    return _size;
+}
+
+
 void BoundedStack::DataArr::swap(DataArr& other) {
     Data** tmp = arr;
     arr = other.arr;
@@ -140,19 +146,15 @@ void BoundedStack::DataArr::swap(DataArr& other) {
 
 
 //BoundedStack impl
-BoundedStack::BoundedStack(size_t size) try
+BoundedStack::BoundedStack(size_t size)
     : data_arr(size)
-    , _size(size)
     , cur_pos(0)
 {
-} catch(std::exception&) {
-    throw;
-}
+} 
 
 
 BoundedStack::BoundedStack(BoundedStack const& other) try
-    : data_arr(other._size)
-    , _size(other._size)
+    : data_arr(other.data_arr.size())
     , cur_pos(other.cur_pos)
 {
     data_arr.copy(other.data_arr);
@@ -162,10 +164,9 @@ BoundedStack::BoundedStack(BoundedStack const& other) try
 
 
 BoundedStack& BoundedStack::operator=(BoundedStack const& other) {
-    DataArr tmp_arr(other._size);
+    DataArr tmp_arr(other.data_arr.size());
     tmp_arr.copy(other.data_arr);
     data_arr.swap(tmp_arr);
-    _size = other._size;
     cur_pos = other.cur_pos;
     return *this;
 }
@@ -177,7 +178,7 @@ size_t BoundedStack::size() const {
 
 
 void BoundedStack::push(const Data & num_text) {
-    if (cur_pos >= _size) {
+    if (cur_pos >= data_arr.size()) {
         throw std::exception();
     }
     data_arr[cur_pos++] = num_text.clone();
