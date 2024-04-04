@@ -248,11 +248,11 @@ void AddInstruction::run(StackInterpreter &stack) {
     }
     catch(const std::exception& e)
     {
-        if (num1 != nullptr) {
-            stack.push_after_pop(num1);
-        }
         if (num2 != nullptr) {
             stack.push_after_pop(num2);
+        }
+        if (num1 != nullptr) {
+            stack.push_after_pop(num1);
         }
         throw;
     }
