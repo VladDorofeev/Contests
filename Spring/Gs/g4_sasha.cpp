@@ -153,14 +153,12 @@ BoundedStack::BoundedStack(size_t size)
 } 
 
 
-BoundedStack::BoundedStack(BoundedStack const& other) try
+BoundedStack::BoundedStack(BoundedStack const& other)
     : data_arr(other.data_arr.size())
     , cur_pos(other.cur_pos)
 {
     data_arr.copy(other.data_arr);
-} catch(std::exception&) {
-    throw;
-}
+} 
 
 
 BoundedStack& BoundedStack::operator=(BoundedStack const& other) {
