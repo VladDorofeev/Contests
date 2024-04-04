@@ -87,10 +87,10 @@ DataArr::DataArr(size_t _sz) :
 }
 
 DataArr::DataArr(const DataArr &other) :
-    sz(other.sz),
+    sz(0),
     arr(nullptr)
 {
-    DataArr temp(sz);
+    DataArr temp(other.sz);
     temp.copy(other);
     this->swap(temp);
 }
@@ -107,18 +107,16 @@ DataArr& DataArr::operator=(const DataArr &other) {
 }
 
 DataArr::~DataArr() {
-    if (arr != nullptr) {
-        for (size_t i = 0; i < sz; i++) {
-            if (arr[i] != nullptr) {
-                delete arr[i];
-            }
+    for (size_t i = 0; i < sz; i++) {
+        if (arr[i] != nullptr) {
+            delete arr[i];
         }
-        delete[] arr;
     }
+    delete[] arr;
 }
 
 void DataArr::copy(const DataArr &other) {
-    for (size_t i = 0; i < sz; i++) {
+    for (size_t i = 0; i < other.sz; i++) {
         if (other.arr[i] != nullptr) {
             arr[i] = other.arr[i]->clone();
         } else {
@@ -181,7 +179,7 @@ Data *BoundedStack::pop() {
     return temp;
 }
 
-size_t BoundedStack::size() const {return arr_size();}
+size_t BoundedStack::size() const {return pos;}
 
 
 #ifdef _main
@@ -216,6 +214,17 @@ int main() {
     stack.push(Text("2"));
 
     BoundedStack stack_cp(stack);
+
+    elem = static_cast<Text*>(stack.pop());
+    num = static_cast<Number*>(stack.pop());
+
+    std::cout << elem->value() << std::endl;
+    std::cout << num->value() << std::endl;
+
+    delete elem;
+    delete num;
+    
+    stack = stack_cp;
 
     elem = static_cast<Text*>(stack.pop());
     num = static_cast<Number*>(stack.pop());
