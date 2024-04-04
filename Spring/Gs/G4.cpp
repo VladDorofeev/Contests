@@ -34,25 +34,38 @@ private:
     std::string str;
 };
 
+class DataArr
+{
+public:
+    explicit DataArr(size_t);
+    DataArr(const DataArr &);
+    DataArr& operator=(const DataArr &);
+    virtual ~DataArr();
 
-class BoundedStack
+    void copy(const DataArr&);
+    void swap(DataArr &);
+    size_t arr_size() const;
+protected:
+    size_t sz;
+    Data **arr;
+};
+
+
+class BoundedStack : private DataArr
 {
 public:
     explicit BoundedStack(size_t);
     BoundedStack(const BoundedStack &);
     BoundedStack& operator=(const BoundedStack&);
-    ~BoundedStack();
-
+    ~BoundedStack() = default;
+    
 
     size_t size() const;
     void push(const Data &data);
     Data *pop();
 private:
-    size_t sz;
     size_t pos;
-    Data **arr;
 };
-
 
 Number::Number(int _num) : num(_num) {}
 int Number::value() const {return num;}
@@ -64,110 +77,164 @@ std::string Text::value() const {return str;}
 Data *Text::clone() const {return new Text(this->str);}
 
 
+DataArr::DataArr(size_t _sz) :
+    sz(_sz)
+{
+    arr = new Data*[sz];
+    for (size_t i = 0; i < sz; i++) {
+        arr[i] = nullptr;
+    }
+}
+
+DataArr::DataArr(const DataArr &other) :
+    sz(other.sz),
+    arr(nullptr)
+{
+    DataArr temp(sz);
+    temp.copy(other);
+    this->swap(temp);
+}
+
+DataArr& DataArr::operator=(const DataArr &other) {
+    if (this == &other) {
+        return *this;
+    }
+    
+    DataArr temp(other);
+    this->swap(temp);
+
+    return *this;
+}
+
+DataArr::~DataArr() {
+    if (arr != nullptr) {
+        for (size_t i = 0; i < sz; i++) {
+            if (arr[i] != nullptr) {
+                delete arr[i];
+            }
+        }
+        delete[] arr;
+    }
+}
+
+void DataArr::copy(const DataArr &other) {
+    for (size_t i = 0; i < sz; i++) {
+        if (other.arr[i] != nullptr) {
+            arr[i] = other.arr[i]->clone();
+        } else {
+            arr[i] = nullptr;
+        }
+    }
+}
+
+void DataArr::swap(DataArr &other) {
+    Data **temp_arr = other.arr;
+    other.arr = arr;
+    arr = temp_arr;
+
+    size_t temp_sz = other.sz;
+    other.sz = sz;
+    sz = temp_sz;
+}
+
+size_t DataArr::arr_size() const {return sz;}
+
+
 BoundedStack::BoundedStack(size_t _sz) :
-    sz(_sz),
+    DataArr(_sz),
     pos(0)
 {
-    arr = new Data*[sz];
 }
+
 BoundedStack::BoundedStack(const BoundedStack &other) :
-    sz(other.sz),
+    DataArr(other),
     pos(other.pos)
 {
-    arr = new Data*[sz];
-    for (size_t i = 0; i < pos; i++) {
-        arr[i] = other.arr[i]->clone();
-    }
 }
-
-BoundedStack::~BoundedStack() {
-    for (size_t i = 0; i < pos; i++) {
-        delete arr[i];
-    }
-    delete[] arr;
-}
-
 
 BoundedStack& BoundedStack::operator=(const BoundedStack &other) {
     if (this == &other) {
         return *this;
     }
 
-    for (size_t i = 0; i < pos; i++) {
-        delete arr[i];
-    }
-    delete[] arr;
-    sz = other.sz;
+    DataArr::operator=(other);
+
     pos = other.pos;
 
-    arr = new Data*[sz];
-    for (size_t i = 0; i < sz; i++) {
-        arr[i] = other.arr[i]->clone();
-    }
     return *this;
 }
 
-size_t BoundedStack::size() const {return sz;}
-
 void BoundedStack::push(const Data &data) {
-    if (pos == sz) {
+    if (pos >= this->arr_size()) {
         throw std::overflow_error("Stack overflow");
     }
-    arr[pos++] = data.clone();
+    Data *temp = data.clone();
+    this->arr[pos++] = temp;
 }
 
 Data *BoundedStack::pop() {
     if (pos == 0) {
         throw std::range_error("Stack is empty");
     }
-    return arr[--pos];
+    Data *temp = this->arr[--pos];
+    this->arr[pos] = nullptr;
+    return temp;
 }
+
+size_t BoundedStack::size() const {return arr_size();}
 
 
 #ifdef _main
 int main() {
-    BoundedStack stack_f(2);
+    {
+        BoundedStack stack(2);
+        stack.push(Number(1));
+        stack.push(Text("second"));
+        try
+        {
+            stack.push(Text("third"));
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
 
-    stack_f.push(Number(1));
-    stack_f.push(Text("second"));
-    try
-    {
-        stack_f.push(Text("third"));
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
     }
 
     BoundedStack stack(100);
     stack.push(Number(1));
     
-    stack = stack_f = stack_f = stack_f = stack_f = stack_f = stack_f;
-    
+    stack = stack = stack = stack = stack = stack = stack;
+
+    stack = BoundedStack(10);
+
     std::cout << stack.size() << std::endl;
 
     Text *elem;
     Number *num;
-    
-    elem = static_cast<Text *>(stack.pop());
+    stack.push(Number(1));
+    stack.push(Text("2"));
+
+    BoundedStack stack_cp(stack);
+
+    elem = static_cast<Text*>(stack.pop());
+    num = static_cast<Number*>(stack.pop());
+
     std::cout << elem->value() << std::endl;
-    delete elem;
-    
-    num = static_cast<Number *>(stack.pop());
     std::cout << num->value() << std::endl;
+
+    delete elem;
     delete num;
 
-    try
-    {
-        num = static_cast<Number *>(stack.pop());
-        std::cout << num->value() << std::endl;
-        delete num;
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-    
+    elem = static_cast<Text*>(stack_cp.pop());
+    num = static_cast<Number*>(stack_cp.pop());
+
+    std::cout << elem->value() << std::endl;
+    std::cout << num->value() << std::endl;
+
+    delete elem;
+    delete num;
+
     return 0;    
 }
 #endif
