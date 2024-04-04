@@ -114,7 +114,7 @@ StackInterpreter::StackInterpreter(size_t _size)
 
 
 StackInterpreter::~StackInterpreter() {
-    for (size_t i = 0; i < cur_pos; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         delete data_arr[i];
     }
     delete [] data_arr;
@@ -141,7 +141,7 @@ Data * StackInterpreter::pop() {
 
 
 void StackInterpreter::return_save(Data* date) {
-    data_arr[++cur_pos] = date;
+    data_arr[cur_pos++] = date;
 }
 
 
@@ -165,53 +165,14 @@ void AddInstruction::run(StackInterpreter & stack) {
         num2 = pop_and_get_number(stack);
         stack.push(Number(num1->value() + num2->value()));
     } catch (const std::exception &) {
-        if (num1) {
-            stack.return_save(num1);
-        }
         if (num2) {
             stack.return_save(num2);
+        }
+        if (num1) {
+            stack.return_save(num1);
         }
         throw;
     }
     delete num1;
     delete num2;
-}
-
-
-int
-main()
-{
-   try {
-       StackInterpreter STACK(5);
-       Number a(3);
-       Number b(2);
-       Number s(5);
-       Text bb("123");
-       STACK.push(b);
-       STACK.push(a);
-       STACK.push(s);
-       STACK.push(bb);
-       AddInstruction instr;
-       instr.run(STACK);
-       Number * num1 = pop_and_get_number(STACK);
-       Number * num2 = pop_and_get_number(STACK);
-       Number * num3 = pop_and_get_number(STACK);
-        std::cout << dynamic_cast<Number *>(num1)->value() << std::endl;
-       std::cout << dynamic_cast<Number *>(num2)->value() << std::endl;
-       std::cout << dynamic_cast<Number *>(num3)->value() << std::endl;
-       delete num1;
-       delete num2;
-       delete num3;
-       Data * elem1 = STACK.pop();
-       Data * elem2 = STACK.pop();
-       Data * elem3 = STACK.pop();
-       std::cout << dynamic_cast<Number *>(elem1)->value() << std::endl;
-       std::cout << dynamic_cast<Number *>(elem2)->value() << std::endl;
-       std::cout << dynamic_cast<Number *>(elem3)->value() << std::endl;
-       delete elem1;
-       delete elem2;
-       delete elem3;
-   } catch (const std::exception & e) {
-       std::cout << e.what() << std::endl;
-   }
 }
