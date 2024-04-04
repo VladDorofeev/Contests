@@ -179,7 +179,8 @@ void BoundedStack::push(const Data & num_text) {
     if (cur_pos >= data_arr.size()) {
         throw std::exception();
     }
-    data_arr[cur_pos++] = num_text.clone();
+    Data* data_pt = num_text.clone();
+    data_arr[cur_pos++] = data_pt;
 }
 
 
