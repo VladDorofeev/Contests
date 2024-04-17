@@ -53,7 +53,7 @@ assign_with_max_grade(std::vector<Application *> & applications)
             ((*iter)->order.empty() == false))
         {
             (*iter)->student->set_department((*iter)->order.front());
-            applications.erase(iter);
+            iter = applications.erase(iter);
         } else {
             iter++;
         }
@@ -68,21 +68,17 @@ bool can_assign(Application *appl) {
     if ((appl->student->grade() == appl->student->MAX_GRADE) &&
         (appl->order.empty() == false)) 
     {
+        appl->student->set_department(appl->order.front());
         return true;
     }
     return false;
 }
 
-void assign(Application *appl) {
-    appl->student->set_department(appl->order.front());
-}
-
 void
 assign_with_max_grade(std::vector<Application *> & applications)
 {
-    std::vector<Application *>::iterator end_it = std::partition(
+    std::vector<Application *>::iterator end_it = std::remove_if(
         applications.begin(), applications.end(), can_assign);
-    std::for_each(applications.begin(), end_it, assign);
     applications.erase(end_it, applications.end());
 }
 }
@@ -137,7 +133,7 @@ int main() {
     Student s3("Sasha");
 
     s1.set_grade(Student::MAX_GRADE);
-    s2.set_grade(44);
+    s2.set_grade(Student::MAX_GRADE);
     s3.set_grade(Student::MAX_GRADE);
 
     Application apl1;
