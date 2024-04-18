@@ -73,7 +73,7 @@ bool all_right_is_terminal(Rule const& rule) {
 
 
 bool all_right_more_or_equal_left(Rule const& rule) {
-    if (rule.first.length() <= rule.second.length()) {
+    if ((rule.first.length() <= rule.second.length()) || (rule.first == "S" && rule.second == "")) {
         return true;
     }
     return false;
@@ -106,19 +106,16 @@ bool is_not_short(Grammar const& g) {
 
 int grammar_type(Grammar const& g) {
     if (is_grammar(g)) {
-        if(std::any_of(g.begin(), g.end(), exist_start_sym)) {
-            if (std::all_of(g.begin(), g.end(), has_only_one_non_terminal_left)) {
-                if (is_regular_left(g) || is_regular_right(g)) {
-                    return 3;
-                }
-                return 2;
+        if (std::all_of(g.begin(), g.end(), has_only_one_non_terminal_left)) {
+            if (is_regular_left(g) || is_regular_right(g)) {
+                return 3;
             }
-            if (is_not_short(g)) {
-                return 1;
-            }
-            return 0;
+            return 2;
         }
-        return -1;
+        if (is_not_short(g)) {
+            return 1;
+        }
+        return 0;
     }
     return -1;
 }
