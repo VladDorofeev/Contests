@@ -84,7 +84,6 @@ bool check_type_2(const grammar &g, int &type) {
         type = 2;
         return true;
     }
-    
     return false;
 }
 
@@ -131,7 +130,8 @@ bool is_not_short(const grammar &g) {
     return std::all_of(g.begin(), g.end(), 
         [](const rule &r) 
         {
-            return r.first.length() <= r.second.length();
+            return (r.first.length() <= r.second.length()) || 
+                ((r.first == "S") && (r.second == ""));
         }
     );
 }
@@ -195,8 +195,8 @@ bool is_left_non_term(const grammar &g) {
 //0
 std::set<std::pair<std::string, std::string>> g0() {
     std::set<std::pair<std::string, std::string>> ans;
-    ans.insert(std::make_pair("S","012"));
-    // ans.insert(std::make_pair("",""));
+    ans.insert(std::make_pair("S",""));
+    ans.insert(std::make_pair("T","aTa"));
     return ans;
 }
 
@@ -206,7 +206,7 @@ std::set<std::pair<std::string, std::string>> g0() {
 // A →
 std::set<std::pair<std::string, std::string>> g1() {
     std::set<std::pair<std::string, std::string>> ans;
-    ans.insert(std::make_pair("S","0A1"));
+    ans.insert(std::make_pair("",""));
     ans.insert(std::make_pair("A","0A0"));
     ans.insert(std::make_pair("A",""));
     return ans;
