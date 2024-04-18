@@ -8,7 +8,6 @@
 typedef std::pair<std::string, std::string> rule; 
 typedef std::set<rule> grammar;
 
-
 //Check all left side of rules in grammar is "T"
 bool is_left_non_term(const grammar &g); 
 
@@ -35,7 +34,7 @@ bool check_type_0(const grammar &g, int &type) {
             return std::any_of(r.first.begin(), r.first.end(), 
                 [](char c) 
                 {
-                    return isupper(c);
+                    return std::isupper(c);
                 }
             );
         })
@@ -100,12 +99,7 @@ bool check_type_1(const grammar &g, int &type) {
     return false;
 }
 
-
 int grammar_type(const grammar &g) {
-    if (g.empty()) {
-        return -1;
-    }
-
     int type = -1;
     
     if (check_type_0(g, type) == false) {
@@ -163,21 +157,19 @@ bool is_regular_string(const std::string &r, bool is_left_side) {
 
     //LEFT-SIDE
     if (is_left_side) {
-        std::string::const_iterator end_iter = --r.end();
-        return std::all_of(r.begin(), end_iter, 
+        return std::all_of(r.begin(), --r.end(), 
             [](char c) 
             {
-                return !isupper(c);
+                return !std::isupper(c);
             }
         );
     } 
 
     //RIGHT-SIDE
-    std::string::const_iterator begin_iter = ++r.begin();
-    return std::all_of(begin_iter, r.end(), 
+    return std::all_of(++r.begin(), r.end(), 
         [](char c) 
         {
-            return !isupper(c);
+            return !std::isupper(c);
         }
     );
 }
@@ -186,18 +178,22 @@ bool is_left_non_term(const grammar &g) {
     return std::all_of(g.begin(), g.end(), 
         [](const rule &r)
         {
-            bool left_is_once_non_term = (r.first.length() == 1) && (isupper(r.first[0]));
+            bool left_is_once_non_term = (r.first.length() == 1) && (std::isupper(r.first[0]));
             return left_is_once_non_term;
         }
     );
 }
 
+
+//========TESTS========//
 #ifdef _main
 //0
 std::set<std::pair<std::string, std::string>> g0() {
     std::set<std::pair<std::string, std::string>> ans;
-    ans.insert(std::make_pair("T","Ta"));
-    ans.insert(std::make_pair("S","a"));
+    // ans.insert(std::make_pair("S",""));
+    // ans.insert(std::make_pair("G",""));
+    // ans.insert(std::make_pair("P",""));
+    // ans.insert(std::make_pair("D","D$%^&*&^%$%^&"));
     return ans;
 }
 
