@@ -1,0 +1,12 @@
+A:
+A:ab
+B:a
+B:aA
+C:
+C:CKC
+C:bA
+S:C
+S:Sa
+S:aS
+K:SSS
+K:abcd
