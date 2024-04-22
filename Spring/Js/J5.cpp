@@ -6,7 +6,6 @@
 
 namespace solution
 {
-
 typedef std::pair<std::string, std::string> Rule_type; 
 typedef std::set<Rule_type> Grammar_type;
 
@@ -102,8 +101,6 @@ void Grammar::proccess_bad_rule(const Rule_type &r, const std::set<std::string> 
     });
 }
 
-
-
 void Grammar::break_rules(std::set<std::string> &bad_non_term, Grammar_type bad_rules) {
     Grammar_type new_items;
 
@@ -142,7 +139,6 @@ void Grammar::break_rules(std::set<std::string> &bad_non_term, Grammar_type bad_
     
     items = new_items;
 }
-
 
 void Grammar::delete_simple_rules() {
     Grammar_type new_items;
@@ -256,7 +252,6 @@ void Grammar::unattainable() {
     items = new_items;
 }
 
-
 void Grammar::cast() {
     //Step 1
     std::pair<std::set<std::string>, Grammar_type> temp = get_bad_non_term();
@@ -274,9 +269,7 @@ void Grammar::cast() {
 
     //Remove rules like X->X
     delete_simple_rules();
-
 }
-
 
 void Grammar::print() const {
     std::for_each(items.begin(), items.end(),
@@ -288,7 +281,6 @@ void Grammar::print() const {
 }
 
 } 
-
 
 int main() {
     solution::Grammar g(std::cin);
