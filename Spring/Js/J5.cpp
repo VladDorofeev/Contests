@@ -2,6 +2,7 @@
 #include <set>
 #include <string>
 #include <algorithm>
+#include <unistd.h>
 
 namespace solution
 {
@@ -30,6 +31,15 @@ private:
     //Step 2 (and 3 at the same moment)
     void break_rules(std::set<std::string> &bad_non_term, Grammar_type bad_rules);
     void proccess_bad_rule(const Rule_type &, const std::set<std::string> &, Grammar_type &);
+
+    //Remove X->X
+    void delete_simple_rules();
+
+    //Remove barren syms
+    void barren();
+    
+    //Remove unattainable syms
+    void unattainable();
 
     //Fields
     Grammar_type items;
@@ -73,7 +83,6 @@ std::pair<std::set<std::string>, Grammar_type> Grammar::get_bad_non_term() {
 }
 
 void Grammar::proccess_bad_rule(const Rule_type &r, const std::set<std::string> &bad_non_term, Grammar_type &new_items) {
-    // std::cout << "parse r " << r.first << ":" << r.second << std::endl;
     size_t pos = 0;
     std::for_each(r.second.begin(), r.second.end(), 
     [&](char c)
@@ -101,22 +110,17 @@ void Grammar::break_rules(std::set<std::string> &bad_non_term, Grammar_type bad_
     std::for_each(items.begin(), items.end(),
     [&](const Rule_type &r) 
     {
-        // std::cout << "rule " << r.first << ':' << r.second << std::endl;
-
         if (bad_rules.contains(r)) {
             if (r.first == "S") {
                 new_items.insert(std::make_pair("T", "S"));
                 new_items.insert(std::make_pair("T", ""));
-                // std::cout << "left side S, added new rule" << std::endl;
             }
             
             if (r.second != "") {
-                // std::cout << "not empty bad rule, go procces " << std::endl;
                 proccess_bad_rule(r, bad_non_term, new_items);
-            } else {
-                //else rule like (T->eplsilon), don`t add
-                // std::cout << "bad rule, because empty, skip "  << std::endl;
-            }
+            } 
+            //else rule like (T->eplsilon), don`t add
+                
         } else {
             //we need check that right side don`t have bad non term
             if (std::any_of(r.second.begin(), r.second.end(),
@@ -128,28 +132,148 @@ void Grammar::break_rules(std::set<std::string> &bad_non_term, Grammar_type bad_
             })
             )
             {
-                // std::cout << "left gut, right have bad nonterm, go procces "  << std::endl;
                 proccess_bad_rule(r, bad_non_term, new_items);
             } else {
-                // std::cout << "normal rule, just added "  << std::endl;
                 new_items.insert(r);
             }
         }
     }
     );
-    // std::cout << std::endl;
     
     items = new_items;
 }
 
 
-void Grammar::cast() {
-    std::pair<std::set<std::string>, Grammar_type> temp = get_bad_non_term();
+void Grammar::delete_simple_rules() {
+    Grammar_type new_items;
 
+    std::for_each(items.begin(), items.end(),
+    [&](const Rule_type &r) 
+    {
+        if (r.first != r.second) {
+            new_items.insert(r);
+        }
+    }
+    );
+    
+    items = new_items;
+}
+
+void Grammar::barren() {
+    Grammar_type new_items;
+
+    std::set<std::string> non_term_first;
+    std::set<std::string> non_term_second;
+
+    do {
+        non_term_first = non_term_second;
+        
+        for (Grammar_type::iterator iter = items.begin(); iter!= items.end(); iter++) {
+            if (std::all_of(iter->second.begin(), iter->second.end(),
+            [&](char c)
+            {
+                bool is_term = !std::isupper(c);
+                return ((non_term_first.find(get_str_from_char(c)) != non_term_first.end()) || is_term);
+            }))
+            {
+                non_term_second.insert(iter->first);
+            }
+        }
+    } while (non_term_first != non_term_second);
+
+    std::for_each(items.begin(), items.end(),
+    [&](const Rule_type &r) 
+    {
+        if (non_term_first.find(r.first) != non_term_first.end()) {
+            if (std::all_of(r.second.begin(), r.second.end(),
+            [&](char c)
+            {
+                bool is_term = !std::isupper(c);
+                return (non_term_first.find(get_str_from_char(c)) != non_term_first.end()) || is_term;
+            }))
+            {
+                new_items.insert(r);
+            }
+        }
+    }
+    );
+
+    items = new_items;
+}
+
+void Grammar::unattainable() {
+    Grammar_type new_items;
+
+    std::set<std::string> non_term_first;
+    std::set<std::string> non_term_second;
+    
+    if (items.find({"T", ""}) != items.end()) {
+        non_term_second.insert("T");
+    } else {
+        non_term_second.insert("S");
+    }
+
+    bool empty_too = false;
+
+    do {
+        non_term_first = non_term_second;
+        for (Grammar_type::iterator iter = items.begin(); iter!= items.end(); iter++) {
+            if (non_term_first.find(iter->first) != non_term_first.end()) {
+                std::for_each(iter->second.begin(), iter->second.end(),
+                [&](char c) 
+                {
+                    non_term_second.insert(get_str_from_char(c));
+                }
+                );
+                if (iter->second.empty()) {
+                    empty_too = true;
+                }
+            }
+        }
+    } while (non_term_first != non_term_second);
+
+    std::for_each(items.begin(), items.end(),
+    [&](const Rule_type &r) 
+    {
+        if (non_term_first.find(r.first) != non_term_first.end()) {
+            if (std::all_of(r.second.begin(), r.second.end(),
+            [&](char c)
+            {
+                return (non_term_first.find(get_str_from_char(c)) != non_term_first.end());
+            }))
+            {
+                new_items.insert(r);
+            }
+            if (r.second.empty()) {
+                if (empty_too) {
+                    new_items.insert(r);
+                }
+            }
+        }
+    }
+    );
+
+    items = new_items;
+}
+
+
+void Grammar::cast() {
+    //Step 1
+    std::pair<std::set<std::string>, Grammar_type> temp = get_bad_non_term();
     std::set<std::string> bad_non_term = temp.first;
     Grammar_type bad_rules = temp.second;
 
+    //Step 2, 3
     break_rules(bad_non_term, bad_rules);
+
+    //Remove barren (бесплодные) syms
+    barren();
+    
+    //Remove unattainable(недостижимые) syms
+    unattainable();
+
+    //Remove rules like X->X
+    delete_simple_rules();
 
 }
 
