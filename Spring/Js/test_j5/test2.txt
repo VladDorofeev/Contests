@@ -1,0 +1,6 @@
+S:AB
+S:BC
+S:
+A:a
+B:b
+C:c
