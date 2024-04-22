@@ -61,6 +61,9 @@ void add_rule(Grammar& g, std::string& s) {
 
 void kill_useless_non_terminals(Grammar& g) {
     Symbols good_non_terminals;
+
+
+    //find all left non_terminal like: non_terminal->terminal_str
     std::for_each(g.begin(), g.end(), [&good_non_terminals](Rule rule){
         if (std::all_of(rule.second.begin(), rule.second.end(), [](char sym){
             return !std::isupper(sym);
@@ -68,6 +71,9 @@ void kill_useless_non_terminals(Grammar& g) {
             good_non_terminals.insert(rule.first[0]);
         }
     });
+
+
+    //find all left non_terminal which right contain only good_non_terminals or terminals
     Symbols::size_type prev_size = good_non_terminals.size();
     do {
         prev_size = good_non_terminals.size();
@@ -82,6 +88,9 @@ void kill_useless_non_terminals(Grammar& g) {
             }
         });
     } while(prev_size != good_non_terminals.size());
+
+
+    //erase all rules which left non_terminal is not in good_non_terminals
     std::erase_if(g, [&good_non_terminals](Rule const& rule){
         return contain_non_good_non_terminal(rule.first, good_non_terminals) 
             || contain_non_good_non_terminal(rule.second, good_non_terminals);
@@ -91,12 +100,18 @@ void kill_useless_non_terminals(Grammar& g) {
 
 void kill_impossible_sym(Grammar& g) {
     Symbols good_non_terminals;
+
+
+    //add start_sym
     if (std::any_of(g.begin(), g.end(), [](Rule const& rule){
         return rule.first == "T";})) {
         good_non_terminals.insert('T');
     } else {
         good_non_terminals.insert('S');
     }
+
+
+    //insert all non_terminals like: good_non_terminal->str(non_terminals, terminals)
     Symbols::size_type prev_size = good_non_terminals.size();
     do {
         prev_size = good_non_terminals.size();
@@ -110,6 +125,9 @@ void kill_impossible_sym(Grammar& g) {
             }
         });
     } while(prev_size != good_non_terminals.size());
+
+
+    //delete all non_terminal which is not in good_non_terminal
     std::erase_if(g, [&good_non_terminals](Rule const& rule){
         return contain_non_good_non_terminal(rule.first, good_non_terminals) 
             || contain_non_good_non_terminal(rule.second, good_non_terminals);
@@ -119,6 +137,9 @@ void kill_impossible_sym(Grammar& g) {
 
 void kill_eps_rules(Grammar& g) {
     Symbols empty_non_terminals;
+
+
+    //find non_terminals like: non_terminal->empty
     std::erase_if(g, [&empty_non_terminals](Rule const& rule){
         if (rule.second.empty()) {
             empty_non_terminals.insert(rule.first[0]);
@@ -126,6 +147,9 @@ void kill_eps_rules(Grammar& g) {
         }
         return false;
     });
+
+
+    //find non_terminals like: non_terminal->str(empty_non_terminals)
     Symbols::size_type prev_size = empty_non_terminals.size();
     do {
         prev_size = empty_non_terminals.size();
@@ -137,17 +161,29 @@ void kill_eps_rules(Grammar& g) {
             }
         });
     } while(prev_size != empty_non_terminals.size());
+
+
+    //find all combinations with empty_non_terminals
     Grammar additional_rules;
     std::for_each(g.begin(), g.end(), [&additional_rules, &empty_non_terminals](Rule const& rule){
         make_new_string(rule, empty_non_terminals, 0, "", additional_rules);
     });
+
+    
+    //add new rules
+    std::for_each(additional_rules.begin(), additional_rules.end(), [&g](Rule const& rule) {
+        g.insert(rule);
+    });
+
+
+    //if need add new start symbol
     if (std::find(empty_non_terminals.begin(), empty_non_terminals.end(), 'S') != empty_non_terminals.end()) {
         g.insert({"T", ""});
         g.insert({"T", "S"});
     }
-    std::for_each(additional_rules.begin(), additional_rules.end(), [&g](Rule const& rule) {
-        g.insert(rule);
-    });
+
+
+    //delete rules like: X->X
     std::erase_if(g, [&empty_non_terminals](Rule const& rule){
         return rule.first == rule.second;
     });
