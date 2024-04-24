@@ -16,15 +16,11 @@ std::set<std::pair<char, std::string>> g3() {
 std::set<std::pair<char, std::string>> g4() {
 
     return {
-        std::make_pair('S',std::string("aS_")), 
-        std::make_pair('S',std::string("Sb_")),
-        std::make_pair('S',std::string("a"))
+        std::make_pair('S',std::string("A_")), 
+        std::make_pair('S',std::string("B_")), 
+        std::make_pair('B',std::string("Ab")), 
+        std::make_pair('B',std::string("Bb")), 
+        std::make_pair('A',std::string("a")), 
+        std::make_pair('A',std::string("Aa")), 
     };
-}
-
-int main() {
-    std::set<std::pair<char, std::string>>  a = g3();
-    std::for_each(a.begin(), a.end(), [](const auto &p) {std::cout << p.first << ' ' << p.second << std::endl;} );
-    a = g4();
-    std::for_each(a.begin(), a.end(), [](const auto &p) {std::cout << p.first << ' ' << p.second << std::endl;} );
 }
