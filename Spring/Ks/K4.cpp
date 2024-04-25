@@ -13,6 +13,7 @@ typedef std::set<Rule> Grammar;
 typedef Grammar (GrammarFunc)(); 
 
 constexpr char BEGIN_STATE = '@';
+constexpr char ERROR_STATE = '#';
 
 Table get_table(GrammarFunc get_grammar) {
     Grammar g = get_grammar();
@@ -75,7 +76,6 @@ std::map<char, State> operator+(const std::map<char, State>& a, const std::map<c
 }
 
 void determine(Table &t) {
-    std::cout << (t.find({'K', 'S'}) == t.end()) << std::endl;
     Table det_t;
     State start = {BEGIN_STATE};
     det_t[start] = t[start];
@@ -90,30 +90,12 @@ void determine(Table &t) {
 
     std::map<char, State> edges_for_state;
     while (!queue.empty()) {
-        std::cout << "new stack element" << std::endl;
-        
         edges_for_state.clear();
         State cur_state = queue.top();
         queue.pop();
 
-        std::cout << "parse (";
-        std::for_each(cur_state.begin(), cur_state.end(), [](char c) {std::cout << c;});
-        std::cout << ")" << std::endl;
-
         std::for_each(cur_state.begin(), cur_state.end(), [&](char nonterm)
         {
-            std::cout << "merge from " << nonterm << std::endl;
-            std::cout << "t[State({nonterm})]  size = " <<  t[State({nonterm})].size() << std::endl;
-
-            std::for_each(t[State({nonterm})].begin(), t[State({nonterm})].end(),
-            [&](const auto &edge)
-            {
-                std::cout << "edge to merge equ " << std::endl;
-                std::cout << edge.first << ' ' << (edge.first == 0) << std::endl;
-                std::for_each(edge.second.begin(), edge.second.end(), [](char c) {std::cout << c;});
-                std::cout << std::endl;
-            });
-
             edges_for_state = edges_for_state  + t[State({nonterm})];
         });
 
@@ -122,22 +104,40 @@ void determine(Table &t) {
         std::for_each(det_t[cur_state].begin(), det_t[cur_state].end(),
         [&](const auto &edge)
         {
-            std::cout << "next push" << std::endl;
-            std::for_each(edge.second.begin(), edge.second.end(), [](char c) {std::cout << c;});
-            std::cout << std::endl;
             if (det_t.find(edge.second) == det_t.end()) {
-                std::cout << "pushed\n";
                 queue.push(edge.second);
             }
         });
-        std::cout << "----------" << std::endl;
     }
     t.clear();
     t = det_t;
 } 
 
+bool belong(Table t, std::string &s) {
+    State cur_state = {BEGIN_STATE};
+    State err_state = {ERROR_STATE};
+    for (char sym: s) {
+        if (sym == '_') {
+            break;
+        }
+
+        if (t[cur_state].find(sym) != t[cur_state].end()) {
+            cur_state = t[cur_state][sym];
+        } else {
+            cur_state = err_state;
+            break;
+        }
+    }
+    if (cur_state == err_state) {
+        return false;
+    }
+    if (cur_state.find('S') == cur_state.end()) {
+        return false;
+    }
+    return true;
+}
+
 void print(Table &t) {
-    std::cout << "========================================" << std::endl;
     for (Table::iterator p_table = t.begin(); p_table != t.end(); p_table++) {
         std::cout << "(";
         std::for_each(p_table->first.begin(), p_table->first.end(), [](char c){std::cout << c;});
@@ -156,48 +156,37 @@ void print(Table &t) {
         }
         std::cout << std::endl;
     }
-    std::cout << "========================================" << std::endl;
 }
 
+Grammar g();
+#ifdef _main
 Grammar g() {
+    // return {
+    //     {'S', "Sa"},
+    //     {'S', "Ma"},
+    //     {'S', "Ka"},
+    //     {'S', "Mb"},
+    //     {'S', "c"},
+    //     {'M', "Ka"},
+    //     {'M', "c"},
+    //     {'K', "c"},
+    // };
     return {
-        {'S', "Sa"},
-        {'S', "Ma"},
-        {'S', "Ka"},
-        {'S', "Mb"},
-        {'S', "c"},
-        {'M', "Ka"},
-        {'M', "c"},
-        {'K', "c"},
+        {'S', "a"},
     };
 }
+#endif
 
 int main() {
     Table table = get_table(g);
-    print(table);
     determine(table);
-    print(table);
-    // std::string s;
-    // while (std::getline(std::cin, s)) {
-    //     if (belong(table, s)) {
-    //         std::cout << "YES" << std::endl;
-    //     } else {
-    //         std::cout << "NO" << std::endl;
-    //     }
-    // }
-}
-
-/*
-    Table t;
-
-    for sym in s:
-    t[cur_state] //set pair
-    for_each t[cur_state]{
-        pair p;
-        if (p.first == cur_sym) {
-            cur_state = p.second;
-            break;
+    
+    std::string s;
+    while (std::getline(std::cin, s)) {
+        if (belong(table, s)) {
+            std::cout << "YES" << std::endl;
+        } else {
+            std::cout << "NO" << std::endl;
         }
     }
-
-*/
+}
