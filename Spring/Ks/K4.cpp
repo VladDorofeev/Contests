@@ -5,6 +5,7 @@
 #include <map>
 #include <stack>
 
+namespace solution {
 typedef std::set<char> State;
 typedef std::map<State, std::map<char, State>> Table;
 
@@ -59,7 +60,6 @@ Table get_table(GrammarFunc get_grammar) {
     return t;
 
 }
-
 
 std::map<char, State> operator+(const std::map<char, State>& a, const std::map<char, State>& b) {
     std::map<char, State> c = a;
@@ -117,8 +117,11 @@ bool belong(Table t, std::string &s) {
     State cur_state = {BEGIN_STATE};
     State err_state = {ERROR_STATE};
     for (char sym: s) {
-        if (sym == '_') {
+        if ((sym == '_') && (t[cur_state].find(sym) == t[cur_state].end())) {
             break;
+        }
+        if ((sym == '_') && (t[cur_state].find(sym) != t[cur_state].end())) {
+            return true;
         }
 
         if (t[cur_state].find(sym) != t[cur_state].end()) {
@@ -157,33 +160,27 @@ void print(Table &t) {
         std::cout << std::endl;
     }
 }
+}
 
-Grammar g();
+std::set<std::pair<char, std::string>> g();
+
 #ifdef _main
-Grammar g() {
-    // return {
-    //     {'S', "Sa"},
-    //     {'S', "Ma"},
-    //     {'S', "Ka"},
-    //     {'S', "Mb"},
-    //     {'S', "c"},
-    //     {'M', "Ka"},
-    //     {'M', "c"},
-    //     {'K', "c"},
-    // };
+std::set<std::pair<char, std::string>> g() {
     return {
-        {'S', "a"},
+        {'S', "Ka"},
+        {'K', "b"},
     };
 }
 #endif
 
 int main() {
-    Table table = get_table(g);
-    determine(table);
-    
+    solution::Table table = solution::get_table(g);
+    solution::determine(table);
+
     std::string s;
     while (std::getline(std::cin, s)) {
-        if (belong(table, s)) {
+        s += '_';
+        if (solution::belong(table, s)) {
             std::cout << "YES" << std::endl;
         } else {
             std::cout << "NO" << std::endl;
