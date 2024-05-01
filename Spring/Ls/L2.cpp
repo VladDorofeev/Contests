@@ -20,7 +20,7 @@ private:
 };
 
 void Parser::gc() {
-    (*in) >> c;
+    c = in->get();
 }
 
 bool Parser::parse(std::istream &_in) noexcept {
@@ -30,7 +30,7 @@ bool Parser::parse(std::istream &_in) noexcept {
         gc();
         S();
 
-        if (c != '_') {
+        if (!(in->eof())) {
             throw c;
         }
         
@@ -79,7 +79,6 @@ int main() {
     
     std::string line;
     while (std::getline(std::cin, line)) {
-        line += '_';
         std::stringstream input(line);
         std::cout << (parser.parse(input) ? "YES" : "NO") << std::endl;
     }
