@@ -21,7 +21,7 @@ private:
 
 void Parser::gc() {
     (*in) >> c;
-    if ((*in).eof()) {
+    if (!(*in)) {
         c = 0;
     }
 }
