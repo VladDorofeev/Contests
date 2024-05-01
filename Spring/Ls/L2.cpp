@@ -7,7 +7,7 @@ class Parser
 {
 public:
     Parser() = default;
-    bool parse(std::istream &);
+    bool parse(std::istream &) noexcept;
 private:
     char c = 0;
     std::istream *in = nullptr;
@@ -21,36 +21,34 @@ private:
 
 void Parser::gc() {
     (*in) >> c;
-    if (!(*in)) {
-        c = 0;
-    }
 }
 
-bool Parser::parse(std::istream &_in) {
+bool Parser::parse(std::istream &_in) noexcept {
     in = &_in;
     try
     {
         gc();
         S();
+
+        if (c != '_') {
+            throw c;
+        }
+        
+        return true;
     }
     catch(char sym)
     {
-        std::string temp;
-        std::getline((*in), temp);
         return false;
     }
 
-    return (c == 0);
 }
 
 void Parser::S() {
     if ((c == 'b') || (c == 'c')) {
         A();
         S();
-    } else if ((c == 'd') || (c == 'a')){
+    } else {
         B();
-    } else if (c != 0) {
-        throw c;
     }
 }
 
@@ -78,13 +76,12 @@ void Parser::B() {
 
 int main() {
     Parser parser;
-    std::stringstream input;
+    
     std::string line;
     while (std::getline(std::cin, line)) {
-        input << line;
+        line += '_';
+        std::stringstream input(line);
         std::cout << (parser.parse(input) ? "YES" : "NO") << std::endl;
-        input.str("");
-        input.clear();
     }
     return 0;
 }
