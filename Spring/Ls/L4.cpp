@@ -248,7 +248,7 @@ std::set<char> operator+ (const std::set<char> &s1, const std::set<char> &s2) {
     return res;
 }
 
-std::set<char> get_first(Grammar &g, char nonterm, std::set<char> &stack) {
+std::set<char> get_first(Grammar &g, char nonterm, std::set<char> &stack, std::set<char> &empty_nonterm) {
     std::set<char> firsts;
     std::for_each(g[nonterm].begin(), g[nonterm].end(),
     [&](const std::string &s) {
@@ -261,9 +261,14 @@ std::set<char> get_first(Grammar &g, char nonterm, std::set<char> &stack) {
             } else {
                 if (stack.find(s[0]) == stack.end()) {
                     stack.insert(s[0]);
-                    std::set<char> temp = get_first(g, s[0], stack);
+                    std::set<char> temp = get_first(g, s[0], stack, empty_nonterm);
                     stack.erase(s[0]);
-
+                    
+                    if (empty_nonterm.find(s[0]) != empty_nonterm.end()) {
+                        stack.insert(s[0]);
+                        temp = temp + get_first(g, s[1], stack, empty_nonterm);
+                        stack.erase(s[0]);
+                    }
                     if (cap(firsts, temp)) {
                         throw nonterm;
                     }
@@ -274,48 +279,6 @@ std::set<char> get_first(Grammar &g, char nonterm, std::set<char> &stack) {
         }
     });
     return firsts;
-}
-
-std::set<char> get_nonterms(const Grammar &g) {
-    std::set<char> nonterms;
-    for (const auto &pair:g) {
-        nonterms.insert(pair.first);
-    }
-    return nonterms;
-}
-
-bool check_first_first(Grammar &g, std::map<char, std::set<char>> &_firsts) {
-    bool is_good = true;
-    
-    std::set<char> nonterms = get_nonterms(g);
-
-    std::map<char, std::set<char>> firsts;
-    
-    std::for_each(nonterms.begin(), nonterms.end(), 
-    [&](char nonterm)
-    {
-        try
-        {
-            std::set<char> call_stack;
-            firsts[nonterm] = get_first(g, nonterm, call_stack);
-        }
-        catch(char c)
-        {
-            std::cout << "nonterm " << nonterm << " has bad first first" << std::endl;
-            is_good = false;
-        }
-    });
-    std::cout << "-----------" << std::endl;
-    std::cout << "firsts" << std::endl;
-    for (const auto &pair:firsts) {
-        std::cout << pair.first << ':' << std::endl;
-        for (char c:pair.second) {
-            std::cout << c << ' ';
-        }
-        std::cout << std::endl;
-    }
-    _firsts = firsts;
-    return is_good;
 }
 std::pair<std::set<char>, std::set<std::string>> get_bad_non_term(Unreduced_Grammar &grammar) {
     std::set<char> empty_non_term_first;
@@ -340,16 +303,61 @@ std::pair<std::set<char>, std::set<std::string>> get_bad_non_term(Unreduced_Gram
     return std::make_pair(empty_non_term_first, bad_rules);
 }
 
+std::set<char> get_nonterms(const Grammar &g) {
+    std::set<char> nonterms;      
+    for (const auto &pair:g) {
+        nonterms.insert(pair.first);
+    }
+    return nonterms;
+}
+
+bool check_first_first(Grammar &g, std::map<char, std::set<char>> &_firsts, std::set<char> &empty_nonterm) {
+    bool is_good = true;
+    
+    std::set<char> nonterms = get_nonterms(g);
+    
+    
+    std::map<char, std::set<char>> firsts;
+    
+    std::for_each(nonterms.begin(), nonterms.end(), 
+    [&](char nonterm)
+    {
+        try
+        {
+            std::set<char> call_stack;
+            firsts[nonterm] = get_first(g, nonterm, call_stack, empty_nonterm);
+        }
+        catch(char c)
+        {
+            // std::cout << "nonterm " << nonterm << " has bad first first" << std::endl;
+            is_good = false;
+        }
+    });
+    // std::cout << "-----------" << std::endl;
+    // std::cout << "firsts" << std::endl;
+    // for (const auto &pair:firsts) {
+    //     std::cout << pair.first << ':' << std::endl;
+    //     for (char c:pair.second) {
+    //         std::cout << c << ' ';
+    //     }
+    //     std::cout << std::endl;
+    // }
+    _firsts = firsts;
+    return is_good;
+}
+
+
 bool check_eps(Grammar &g, Unreduced_Grammar unred_g, std::set<char> &_empty_nonterm) {
-    std::cout << "-----------" << std::endl;
+    // std::cout << "-----------" << std::endl;
     std::pair<std::set<char>, std::set<std::string>> temp = get_bad_non_term(unred_g); 
     std::set<char> empty_nonterm = temp.first;
     std::set<std::string> bad_rules = temp.second;
-    std::cout << "empty" << std::endl;
-    for (char c:empty_nonterm) {
-        std::cout << c << ' ';
-    }
-    std::cout << std::endl;
+
+    // std::cout << "empty" << std::endl;
+    // for (char c:empty_nonterm) {
+    //     std::cout << c << ' ';
+    // }
+    // std::cout << std::endl;
 
     for (char nonterm : empty_nonterm) {
         int cnt_bad_rules = 0;
@@ -359,7 +367,7 @@ bool check_eps(Grammar &g, Unreduced_Grammar unred_g, std::set<char> &_empty_non
             }
         }
         if (cnt_bad_rules > 1) {
-            std::cout << "nonterm " << nonterm << " has more than one epls rule" << std::endl;
+            // std::cout << "nonterm " << nonterm << " has more than one epls rule" << std::endl;
             return false;
         }
         cnt_bad_rules = 0;
@@ -371,9 +379,8 @@ bool check_eps(Grammar &g, Unreduced_Grammar unred_g, std::set<char> &_empty_non
 std::set<char> get_follow(
         Grammar &g, 
         char nonterm, 
-        std::map<char, std::set<char>> firsts, 
-        std::set<char> &stack,
-        std::set<char> empty_nonterms
+        std::map<char, std::set<char>> &firsts, 
+        std::set<char> &empty_nonterms
     ) 
 {
     std::set<char> follow;
@@ -386,14 +393,20 @@ std::set<char> get_follow(
                     size_t pos = s.find(nonterm);
                     if (pos != std::string::npos) {
                         if ((pos + 1) >= s.length()) {
-                            //forward pair.first added
-                            follow = follow + get_follow(g, pair.first, firsts, stack, empty_nonterms);
+                            //forward(A)
+                            // T -> aA
+                            // follow = follow + get_follow(g, pair.first, firsts, empty_nonterms);
                         } else {
                             if (s.at(pos + 1) != nonterm) {
-                                if (empty_nonterms.find(s.at(pos + 1)) != empty_nonterms.end()) {
-                                    follow = follow + get_follow(g, pair.first, firsts, stack, empty_nonterms);
+                                // std::cout << "heree\n";
+                                if (!std::isupper(s.at(pos+1))) {
+                                    follow.insert(s.at(pos + 1));
+                                } else {
+                                    // if (empty_nonterms.find(s.at(pos + 1)) != empty_nonterms.end()) {
+                                    //     follow = follow + get_follow(g, pair.first, firsts, empty_nonterms);
+                                    // }
+                                    follow = follow + firsts[s.at(pos + 1)];
                                 }
-                                follow = follow + firsts[s.at(pos + 1)];
                             }
                         }
                     }
@@ -401,53 +414,31 @@ std::set<char> get_follow(
             });
         }
     }
-    std::cout << "-------------------" << std::endl;
-    std::cout << "follow for " << nonterm << std::endl;
-    for(char c:follow) {
-        std::cout << c << ' ';
+    // std::cout << "-------------------" << std::endl;
+    // std::cout << "follow for " << nonterm << std::endl;
+    // for(char c:follow) {
+    //     std::cout << c << ' ';
+    // }
+    // std::cout << std::endl;
+    if (cap(follow, firsts[nonterm])) {
+        throw nonterm;
     }
-    std::cout << std::endl;
-
-    // std::for_each(g[nonterm].begin(), g[nonterm].end(),
-    // [&](const std::string &s) {
-    //     if (s.length() > 0) {
-    //         if (!std::isupper(s[0])) {
-    //             if (cap(firsts, {s[0]})) {
-    //                 throw nonterm;
-    //             }
-    //             firsts.insert(s[0]);
-    //         } else {
-    //             if (stack.find(s[0]) == stack.end()) {
-    //                 stack.insert(s[0]);
-    //                 std::set<char> temp = get_first(g, s[0], stack);
-    //                 stack.erase(s[0]);
-
-    //                 if (cap(firsts, temp)) {
-    //                     throw nonterm;
-    //                 }
-    //                 firsts = firsts + temp;
-    //             }
-                
-    //         }
-    //     }
-    // });
     return follow;
 }
 
 bool check_first_follow(Grammar &g, std::map<char, std::set<char>> firsts, std::set<char> &empty_nonterm) {
     bool is_good = true;
-    std::map<char, std::set<char>> follow;
+    std::map<char, std::set<char>> follows;
     std::for_each(empty_nonterm.begin(), empty_nonterm.end(), 
     [&](char nonterm)
     {
         try
         {
-            std::set<char> call_stack;
-            follow[nonterm] = get_follow(g, nonterm, firsts, call_stack, empty_nonterm);
+            follows[nonterm] = get_follow(g, nonterm, firsts, empty_nonterm);
         }
         catch(char c)
         {
-            std::cout << "nonterm " << nonterm << " has bad first follow" << std::endl;
+            // std::cout << "nonterm " << nonterm << " has bad first follow" << std::endl;
             is_good = false;
         }
     });
@@ -460,10 +451,13 @@ bool is_rd(Unreduced_Grammar g) {
     }
     Grammar reduced_g = reduced(g);
     std::map<char, std::set<char>> firsts;
-    std::set<char> empty_nonterm;
+
+    std::pair<std::set<char>, std::set<std::string>> temp = get_bad_non_term(g); 
+    std::set<char> empty_nonterm = temp.first;
+    std::set<std::string> bad_rules = temp.second;
 
     return 
-        check_first_first(reduced_g, firsts) && 
+        check_first_first(reduced_g, firsts, empty_nonterm) && 
         check_eps(reduced_g, g, empty_nonterm) && 
         check_first_follow(reduced_g, firsts, empty_nonterm);
 }
