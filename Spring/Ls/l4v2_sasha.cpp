@@ -219,6 +219,8 @@ void check_follow(Symbols& nts, Symbols& syms, char nt, std::string const& str, 
                         new_str = str.substr(j + 1);
                         non_terminals.clear();
                         check_first(non_terminals, syms, new_str, g, nts);
+                    } else {
+                        break;
                     }
                 }
             }
