@@ -58,17 +58,17 @@ bool is_ks(Grammar& g) {
 }
 
 
-void check_first(Symbols& nts, Symbols& syms_, std::string str, Grammar& g, Symbols& nts2) {
+void find_first(Symbols& nts, Symbols& syms_, std::string str, Grammar& g, Symbols& nts2) {
     if (str.length() != 0) {
         if (std::isupper(str[0])) {
             if (std::find(nts.begin(), nts.end(), str[0]) == nts.end()) {
                 nts.insert(str[0]);
                 std::for_each(g[{str[0]}].begin(), g[{str[0]}].end(), [&nts2, &nts, &syms_, &g](std::string const& s){
-                    check_first(nts, syms_, s, g, nts2);
+                    find_first(nts, syms_, s, g, nts2);
                 });
             }
             if (std::find(nts2.begin(), nts2.end(), str[0]) != nts2.end()) {
-                check_first(nts, syms_, str.substr(1), g, nts2);
+                find_first(nts, syms_, str.substr(1), g, nts2);
             } 
         } else {
             syms_.insert(str[0]);
@@ -97,22 +97,14 @@ bool no_crossing_first(Grammar& g, Symbols& empty_nts) {
         std::for_each(rules.second.begin(), rules.second.end(), [&empty_nts, &v_syms, &g](std::string const& right){
             Symbols syms;
             Symbols non_terminals;
-            check_first(non_terminals, syms, right, g, empty_nts);
+            find_first(non_terminals, syms, right, g, empty_nts);
             v_syms.push_back(syms);
     
         });
-        // std::cout << rules.first << ":";
-        // std::for_each(v_syms.begin(), v_syms.end(), [](Symbols const syms){
-        //     std::cout << " { ";
-        //     std::for_each(syms.begin(), syms.end(), [](char sym){
-        //         std::cout << sym << " ";
-        //     });
-        //     std::cout << "}";
-        // }); 
-        // std::cout << std::endl;
         return crossing_sets(v_syms);
     });
 }
+
 
 void find_eps_rules(Grammar& g, Symbols& nts) {
     std::for_each(g.begin(), g.end(), [&nts](Rules const& rules){
@@ -153,7 +145,7 @@ bool no_more_one_eps_rules(Grammar& g, Symbols& nts) {
 }
 
 
-void check_syms_that_contain_back(Grammar& g, Symbols& syms, char sym, Symbols& empty_syms) {
+void add_predicate_syms(Grammar& g, Symbols& syms, char sym, Symbols& empty_syms) {
     std::for_each(g.begin(), g.end(), [&](Rules const& rules){
         for(std::string str: rules.second) {
             if (!str.empty()) {
@@ -175,50 +167,35 @@ void check_syms_that_contain_back(Grammar& g, Symbols& syms, char sym, Symbols& 
             }
         }
     });
-    Symbols::size_type prev_size = syms.size();
+}
+
+
+void find_syms_that_contain_back(Grammar& g, Symbols& syms, char sym, Symbols& empty_syms) {
+    add_predicate_syms(g, syms, sym, empty_syms);
+    Symbols prev_syms;
     do
     {
-        prev_size = syms.size();
-        std::for_each(syms.begin(), syms.end(), [&](char s){
-            std::for_each(g.begin(), g.end(), [&](Rules const& rules){
-                for(std::string str: rules.second) {
-                    if (!str.empty()) {
-                        for(std::string::size_type i = str.length(); i != 0; --i) {
-                            if (!std::isupper(str[i - 1])) {
-                                break;
-                            } else {
-                                if (str[i - 1] == sym) {
-                                    syms.insert(rules.first[0]);
-                                    break;
-                                } else if (empty_syms.find(str[i - 1]) == empty_syms.end()) {
-                                    break;
-                                }
-                            }
-                        }
-                        if (syms.find(rules.first[0]) != syms.end()) {
-                            break;
-                        }
-                    }
-                }
-            });
+        prev_syms = syms;
+        std::for_each(prev_syms.begin(), prev_syms.end(), [&](char s){
+            add_predicate_syms(g, syms, sym, empty_syms);
         });
-    } while (prev_size != syms.size());
+    } while (prev_syms != syms);
     
 }
 
 
-void check_follow(Symbols& nts, Symbols& syms, char nt, std::string const& str, Grammar& g, Symbols& back_syms) {
+void find_follow(Symbols& nts, Symbols& syms, char nt, std::string const& str, Grammar& g, Symbols& back_syms) {
     if (!str.empty()) {
         for(std::string::size_type i = 0; i < (str.length() - 1); ++i) {
             if (str[i] == nt || back_syms.find(str[i]) != back_syms.end()) {
                 std::string new_str = str.substr(i + 1);
                 Symbols non_terminals;
-                check_first(non_terminals, syms, new_str, g, nts);
+                find_first(non_terminals, syms, new_str, g, nts);
                 for(std::string::size_type j = i + 1; j < (str.length() - 1); ++j) {
                     if (nts.find(str[j]) != nts.end()) {
                         new_str = str.substr(j + 1);
                         non_terminals.clear();
-                        check_first(non_terminals, syms, new_str, g, nts);
+                        find_first(non_terminals, syms, new_str, g, nts);
                     } else {
                         break;
                     }
@@ -235,15 +212,15 @@ bool no_crossing_first_with_follow(Grammar& g, Symbols& nts) {
         Symbols syms;
         std::for_each(g[{nt}].begin(), g[{nt}].end(), [&nts, &syms, &g](std::string const& right){
             Symbols non_terminals;
-            check_first(non_terminals, syms, right, g, nts);
+            find_first(non_terminals, syms, right, g, nts);
         });
         first_and_follow.push_back(syms);
         syms.clear();
         Symbols backs_syms;
-        check_syms_that_contain_back(g, backs_syms, nt, nts);
+        find_syms_that_contain_back(g, backs_syms, nt, nts);
         std::for_each(g.begin(), g.end(), [&](Rules const rules){
             std::for_each(rules.second.begin(), rules.second.end(), [&](std::string const& str){
-                check_follow(nts, syms, nt, str, g, backs_syms);
+                find_follow(nts, syms, nt, str, g, backs_syms);
             });
         });
         first_and_follow.push_back(syms);
@@ -264,7 +241,6 @@ int
 main() {
     Grammar grammar;    
     std::cin >> grammar;
-    //std::cout << grammar;
     if (apply_rd(grammar)) {
         std::cout << "YES" << std::endl;
     } else {
