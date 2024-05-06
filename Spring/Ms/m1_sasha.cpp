@@ -2,8 +2,8 @@
 #include <exception>
 #include <sstream>
 
-// S → <ka = 0; kb = 0;>A
-// A → aA | bA | <if (ka != 2*kb){throw std::exception;}>ε 
+// S → <ka = 0; kb = 0;> A <if (ka != 2*kb){throw std::exception;}>
+// A → aA <ka++> | bA <kb++> | ε  
 
 class Parser {
 public:
