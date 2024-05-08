@@ -6,7 +6,7 @@
 
 /*
 
-S -> <ka = 0; kb = 0;> T < if (cnt_a != 2 * cnt_b) {not in L} >
+S -> <cnt_a = 0; cnt_b = 0;> T < if (cnt_a != 2 * cnt_b) {not in L} >
 T -> aT <cnt_a++> | bT <cnt_b++> | eps  
 
 */
