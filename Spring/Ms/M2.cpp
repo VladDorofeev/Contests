@@ -5,9 +5,12 @@
 
 
 /*
+s is a stream of char
 
 S -> <s.clear()> aT | bT
 T -> <s.add('2')> aT <s.add('a')> | bT <s.add('b')> | eps  
+
+tau(w) = s
 
 */
 
