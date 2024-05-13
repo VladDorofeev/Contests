@@ -12,33 +12,31 @@
     Для лучшего понимания нетерминалы обозначены не одной заглавной буквой, 
     а Словом (между словами для читаемости допускается пробел)
     
-    
-
     Чистая без действий: 
 
-    S -> Assign Comma
-    Comma -> ',' S | eps
-    Assign -> Arithm Equal
-    Equal -> '=' Assign | eps
-    Arithm -> Op Sub
-    Sub -> '-' Op Sub | eps
-    Op -> Var | Num | '(' S ')'
-    Var -> буква
-    Num -> цифра 
+        S -> Assign Comma
+        Comma -> ',' S | eps
+        Assign -> Arithm Equal
+        Equal -> '=' Assign | eps
+        Arithm -> Op Sub
+        Sub -> '-' Op Sub | eps
+        Op -> Var | Num | '(' S ')'
+        Var -> буква
+        Num -> цифра 
 
 
     С действиями:
 
-    <init helpful vars>
-    S -> Assign Comma
-    Comma -> ',' <lvalue = false> S | eps
-    Assign -> Arithm Equal
-    Equal -> '=' <if (!lvalue) ERROR> Assign <assign var> | eps
-    Arithm -> Op Sub
-    Sub -> '-' <> Arithm <lvalue = false, calculate sub> | eps
-    Op -> Var | Num | '(' S ')'
-    Var -> буква <lvalue = true, stack.push(буква)>
-    Num -> цифра <lvalue = false, stack.push(цифра)>
+        <init helpful vars>
+        S -> Assign Comma
+        Comma -> ',' <clear vars> S | eps
+        Assign -> Arithm Equal
+        Equal -> '=' <if not lvalue then ERROR> Assign <assign> | eps
+        Arithm -> Op Sub
+        Sub -> '-' Op <calculate result, push> Sub | eps
+        Op -> Var | Num | '(' S ')'
+        Var -> буква <lvalue=true, stack.push(var)>
+        Num -> цифра <lvalue=false, stack.push(num)>
 
 */
 
@@ -70,6 +68,8 @@ private:
     int value = 0;
     std::map<int, int> vars;
     std::stack<int> stack;
+
+    int get_value_of_var(int);
 };
 
 void Parser::gc() {
@@ -94,6 +94,9 @@ void Parser::parse(std::istream &_in) {
 
     value = stack.top();
     stack.pop();
+    if (lvalue) {
+        value = get_value_of_var(value);
+    }
 
 }
 
@@ -134,11 +137,18 @@ void Parser::Equal() {
         /* < */
         int op = stack.top();
         stack.pop();
+
+        if (lvalue) {
+            op = get_value_of_var(op);
+        }
+
         int var = stack.top();
         stack.pop();
 
         vars[var] = op;
         stack.push(op);
+
+        lvalue = false;
         /* > */
 
     }
@@ -152,37 +162,30 @@ void Parser::Arithm() {
 void Parser::Sub() {
     if (c == '-') {
         /* < */
-
+        bool saved_lvalue = lvalue;
+        lvalue = false;
         /* > */
         
         gc();
         Op();
 
         /* < */
-        lvalue = false;
         int op2 = stack.top();
         stack.pop();
         int op1 = stack.top();
         stack.pop();
+
         //check that operand is var
-        if (op1 > 9) {
-            if (vars.find(op1) == vars.end()) {
-                std::cout << "uninit var ";
-                throw c;
-            } else {
-                op1 = vars[op1];
-            }
+        if (saved_lvalue) {
+            op1 = get_value_of_var(op1);
         }
-        if (op2 > 9) {
-            if (vars.find(op2) == vars.end()) {
-                std::cout << "uninit var ";
-                throw c;
-            } else {
-                op2 = vars[op2];
-            }
+        if (lvalue) {
+            op2 = get_value_of_var(op2);
         }
-        std::cout << "sub " << static_cast<char>(op1+'0') << '-' << static_cast<char>(op2+'0') << std::endl; 
+
         stack.push(op1 - op2);
+
+        lvalue = false;
         /* > */
 
         Sub();
@@ -241,6 +244,16 @@ void Parser::Num() {
 }
 
 int Parser::get_value() const { return value; }
+
+int Parser::get_value_of_var(int operand) {
+    if (vars.find(operand) == vars.end()) {
+        std::cout << "uninit var ";
+        throw c;
+    } else {
+        return vars[operand];
+    }
+}
+
 
 int main() {
     Parser parser;
