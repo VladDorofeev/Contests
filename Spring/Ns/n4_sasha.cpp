@@ -79,11 +79,11 @@ Poliz ShellParser::parse(std::istream& in) {
     if (cur_sym != EOF) {
         throw std::runtime_error("End but EOF is impossible");
     }
-    std::cout << "Poliz ";
+    // std::cout << "Poliz ";
     std::for_each(poliz.begin(), poliz.end(), [](Token const& str){
-        std::cout << char(str.repr) << ' ';
+        // std::cout << char(str.repr) << ' ';
     });
-    std::cout << std::endl;
+    // std::cout << std::endl;
     return poliz;
 }
 
@@ -190,26 +190,37 @@ void Interpreter::interpret(Poliz poliz_) {
     // while(index < size) {
 
     // }
-    std::cout << "----------------" << std::endl;
+    // std::cout << "----------------" << std::endl;
     std::string cmd;
     std::stack<std::string> stack;
     char temp[2];
     std::for_each(poliz.begin(), poliz.end(),
     [&](const Token &token)
     {
-        std::cout << static_cast<char>(token.repr) << std::endl;
+        // std::cout << static_cast<char>(token.repr) << std::endl;
+
         if (token.kind == Token::ID) {
-            std::cout << "pushed " << names[token.repr] << std::endl; 
+            // std::cout << "pushed " << (names[token.repr]) << std::endl; 
             stack.push(names[token.repr]);
-        } else if ((token.kind != Token::SIGN_SEM) && (token.kind != Token::ARGV)){
+        } else if ((token.kind != Token::SIGN_SEM) && (token.kind != Token::ARGV)&& (token.kind != Token::OPEN)&& (token.kind != Token::CLOSE)){
+            // std::cout << "binary\n";
             std::string op2 = stack.top();
             stack.pop();
+            // std::cout << op2 << std::endl;
             std::string op1 = stack.top();
             stack.pop();
+            // std::cout << op1 << std::endl;
+
 
             temp[0] = token.repr;
-            std::string res = op1 + std::string(temp) + op2;
-            std::cout << "parse " << temp[0] << " str = " << res << std::endl;
+            std::string res;
+            if (token.repr == '*') {
+                res = op1 + " && " + op2;
+            } else if (token.repr == '+') {
+                res = op1 + " || " + op2;
+            } else {
+                res = op1 + " " + std::string(temp) + " " + op2;
+            }
             stack.push(res);
 
         } else if (token.kind == Token::SIGN_SEM) {
@@ -218,13 +229,18 @@ void Interpreter::interpret(Poliz poliz_) {
 
             temp[0] = token.repr;
             std::string res = op1 + std::string(temp);
-            std::cout << "parse " << temp[0] << " str = " << res << std::endl;
+            // std::cout << "parse " << temp[0] << " str = " << res << std::endl;
             stack.push(res);
-        } else //here argv 
+        } else if (token.kind == Token::ARGV) 
         {
             std::string op1 = stack.top();
             stack.pop();
             stack.push(op1 + " " + names[token.repr]);
+        } else if (token.kind == Token::OPEN){
+        } else if (token.kind == Token::CLOSE){
+            std::string op1 = stack.top();
+            stack.pop();     
+            stack.push("(" + op1 + ")");
         }
 
     });
@@ -232,15 +248,12 @@ void Interpreter::interpret(Poliz poliz_) {
         cmd = stack.top() + cmd;
         stack.pop();
     }
-    std::cout << cmd << std::endl;
-    if (!stack.empty()) {
-        std::cout << "HEUTA" << std::endl;
-    }
+    // std::cout <<std::endl<<std::endl<<std::endl<<std::endl<< cmd << std::endl;
 
     // a<b & a>c+a>b<c;
 
-    std::cout << "----------------" << std::endl;
-
+    // std::cout << "----------------" << std::endl;
+    system(cmd.c_str());
 }
 
 
@@ -260,7 +273,7 @@ main() {
         std::getline(std::cin, cur_str);
     }
     std::for_each(names.begin(), names.end(), [&](std::pair<const int, std::string> const& p){
-        std::cout << "ID: " << p.first << " Name: " << p.second << std::endl;
+        // std::cout << "ID: " << p.first << " Name: " << p.second << std::endl;
     });
     ShellParser shell_parser(names);
     Interpreter interpreter(names);
@@ -271,7 +284,7 @@ main() {
             poliz = shell_parser.parse(sin);
             interpreter.interpret(poliz);
         } catch(std::runtime_error& err) {
-            std::cout << err.what() << std::endl;
+            // std::cout << err.what() << std::endl;
         }
     }
 }
