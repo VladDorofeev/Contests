@@ -57,7 +57,6 @@ public:
 
     void interpret(Poliz);
 private:
-    Poliz poliz;
     Names names;
 };
 
@@ -180,8 +179,7 @@ Interpreter::Interpreter(Names names_)
 }
 
 
-void Interpreter::interpret(Poliz poliz_) {
-    poliz = poliz_;
+void Interpreter::interpret(Poliz poliz) {
     // std::string command;
     // std::stack<Token> args;
     // Poliz::size_type index = 0;
@@ -193,7 +191,7 @@ void Interpreter::interpret(Poliz poliz_) {
     // std::cout << "----------------" << std::endl;
     std::string cmd;
     std::stack<std::string> stack;
-    char temp[2];
+    char temp[2] = {0,0};
     std::for_each(poliz.begin(), poliz.end(),
     [&](const Token &token)
     {
