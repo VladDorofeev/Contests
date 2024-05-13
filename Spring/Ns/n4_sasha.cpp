@@ -157,7 +157,7 @@ void ShellParser::SIMPLE() {
         poliz.push_back({Token::ID, cur_sym});
         gc();
         while(names.find(cur_sym) != names.end()) {
-            poliz.push_back({Token::ARGV, cur_sym});
+            poliz.push_back({Token::ID, cur_sym});
             gc();
         }
     } else {
@@ -182,95 +182,62 @@ Interpreter::Interpreter(Names names_)
 
 void Interpreter::interpret(Poliz poliz_) {
     poliz = poliz_;
-    std::string command;
-    std::stack<Token> args;
-    Poliz::size_type index = 0;
-    Poliz::size_type size = poliz.size();
-    Token poliz_lex;
-    while(index < size) {
-        std::string sub_command;
-        poliz_lex = poliz[index];
-        switch (poliz_lex.kind)
-        {
-        case Token::ID:
-        case Token::ARGV:
-            args.push(poliz_lex);
-            break;
-        case Token::REDIRECT:
-            sub_command.insert(0, names[args.top().repr]);
-            args.pop();
-            sub_command.insert(0, std::string(" "));
-            sub_command.insert(0, 1, poliz_lex.repr);
-            while(!args.empty()) {
-                sub_command.insert(0, std::string(" ")); 
-                sub_command.insert(0, names[args.top().repr]);
-                args.pop();
-            }
-            break;
-        case Token::PIPE:
-        case Token::CONJ_DISJ:
-            while(!args.empty()) {
-                Token lex = args.top();
-                sub_command.insert(0, names[lex.repr]);
-                args.pop();
-                sub_command.insert(0, std::string(" "));
-                if (lex.kind == Token::ID) {
-                    break;
-                }
-            }
-            sub_command.insert(0, names[args.top().repr]);
-            sub_command.insert(0, std::string(" "));
-            switch (poliz_lex.repr)
-            {
-            case '*':
-                sub_command.insert(0, std::string("&&"));
-                break;
-            case '+':
-                sub_command.insert(0, std::string("||"));
-                break;
-            case '|':
-                sub_command.insert(0, 1, poliz_lex.repr);
-            default:
-                break;
-            }
-            while(!args.empty()) {
-                sub_command.insert(0, std::string(" ")); 
-                sub_command.insert(0, names[args.top().repr]);
-                args.pop();
-            }
-            break;
-        case Token::SIGN_SEM:
-            sub_command.insert(0, 1, poliz_lex.repr);
-            while(!args.empty()) {
-                sub_command.insert(0, std::string(" ")); 
-                sub_command.insert(0, names[args.top().repr]);
-                args.pop();
-            }
-            break;
-        case Token::OPEN:
-            sub_command.insert(0, 1, poliz_lex.repr);
-            break;
-        case Token::CLOSE:
-            sub_command.insert(0, 1, poliz_lex.repr);
-            while(!args.empty()) {
-                sub_command.insert(0, std::string(" ")); 
-                sub_command.insert(0, names[args.top().repr]);
-                args.pop();
-            }
-            break;
-        default:
-            break;
+    // std::string command;
+    // std::stack<Token> args;
+    // Poliz::size_type index = 0;
+    // Poliz::size_type size = poliz.size();
+    // Token poliz_lex;
+    // while(index < size) {
+
+    // }
+    std::cout << "----------------" << std::endl;
+    std::string cmd;
+    std::stack<std::string> stack;
+    char temp[2];
+    std::for_each(poliz.begin(), poliz.end(),
+    [&](const Token &token)
+    {
+        std::cout << static_cast<char>(token.repr) << std::endl;
+        if (token.kind == Token::ID) {
+            std::cout << "pushed " << names[token.repr] << std::endl; 
+            stack.push(names[token.repr]);
+        } else if ((token.kind != Token::SIGN_SEM) && (token.kind != Token::ARGV)){
+            std::string op2 = stack.top();
+            stack.pop();
+            std::string op1 = stack.top();
+            stack.pop();
+
+            temp[0] = token.repr;
+            std::string res = op1 + std::string(temp) + op2;
+            std::cout << "parse " << temp[0] << " str = " << res << std::endl;
+            stack.push(res);
+
+        } else if (token.kind == Token::SIGN_SEM) {
+            std::string op1 = stack.top();
+            stack.pop();
+
+            temp[0] = token.repr;
+            std::string res = op1 + std::string(temp);
+            std::cout << "parse " << temp[0] << " str = " << res << std::endl;
+            stack.push(res);
+        } else {
+            std::cout << "GG" << std::endl;
         }
-        sub_command.insert(0, std::string(" ")); 
-        command.append(sub_command);
-        ++index;
+
+    });
+    while (!stack.empty()) {
+        cmd = stack.top() + cmd;
+        stack.pop();
     }
-    while(!args.empty()) {
-        command.append(std::string(" ")); 
-        command.append(names[args.top().repr]);
-        args.pop();
+    std::cout << cmd << std::endl;
+    if (!stack.empty()) {
+        std::cout << "HEUTA" << std::endl;
     }
-    std::cout << command << std::endl;
+
+    // a<b & a>c+a>b<c;
+
+    std::cout << "----------------" << std::endl;
+
 }
 
 
@@ -300,7 +267,6 @@ main() {
             std::istringstream sin(cur_str);
             poliz = shell_parser.parse(sin);
             interpreter.interpret(poliz);
-
         } catch(std::runtime_error& err) {
             std::cout << err.what() << std::endl;
         }
