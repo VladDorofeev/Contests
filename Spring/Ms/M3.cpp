@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <exception>
 #include <string>
@@ -27,16 +28,15 @@
 
     С действиями:
 
-        <init helpful vars>
-        S -> Assign Comma
-        Comma -> ',' <clear vars> S | eps
-        Assign -> Arithm Equal
-        Equal -> '=' <if not lvalue then ERROR> Assign <assign> | eps
-        Arithm -> Op Sub
-        Sub -> '-' Op <calculate result, push> Sub | eps
-        Op -> Var | Num | '(' S ')'
-        Var -> буква <lvalue=true, stack.push(var)>
-        Num -> цифра <lvalue=false, stack.push(num)>
+        S       ->    <...> Assign Comma <...>
+        Comma   ->    ',' <...> S | eps
+        Assign  ->    Arithm Equal
+        Equal   ->    '=' <...> Assign <...> | <...> eps
+        Arithm  ->    Op Sub
+        Sub     ->    '-' Op <...> Sub <...> | eps
+        Op      ->    Var | Num | '(' S ')'
+        Var     ->    буква <...>
+        Num     ->    цифра <...>
 
 */
 
@@ -47,7 +47,6 @@ public:
     void parse(std::istream &);
 
     int get_value() const;
-    void print_vars() {std::for_each(vars.begin(), vars.end(), [](auto p) {std::cout << static_cast<char>(p.first) << ':' << p.second << std::endl;});}
 private:
     int c = 0;
     std::istream *in = nullptr;
@@ -88,15 +87,13 @@ void Parser::parse(std::istream &_in) {
     S();
 
     if (c != EOF) {
-        std::cout << "EOF on " << static_cast<char> (c) << " ";
-        throw c;
+        throw std::logic_error("Not a EOF");
     }
 
+    /* < */
     value = stack.top();
     stack.pop();
-    if (lvalue) {
-        value = get_value_of_var(value);
-    }
+    /* > */
 
 }
 
@@ -107,6 +104,7 @@ void Parser::S() {
 
 void Parser::Comma() {
     if (c == ',') {
+
         /* < */
         lvalue = false;
         stack.pop();
@@ -124,10 +122,10 @@ void Parser::Assign() {
 
 void Parser::Equal() {
     if (c == '=') {
+
         /* < */
         if (!lvalue) {
-            std::cout << "not lvalue ";
-            throw c;
+            throw std::logic_error("Not a lvalue in equal");
         }
         /* > */
 
@@ -151,6 +149,15 @@ void Parser::Equal() {
         lvalue = false;
         /* > */
 
+    } else {
+        /* < */
+        int op = stack.top();
+        stack.pop();
+        if (lvalue) {
+            op = get_value_of_var(op);
+        }
+        stack.push(op);
+        /* < */
     }
 }
 
@@ -201,54 +208,38 @@ void Parser::Op() {
         gc();
         S();
         if (c != ')') {
-            std::cout << ") ";
-            throw c;
+            throw std::logic_error("Not enough )");
         } else {
             gc();
         }
     } else {
-        std::cout << "Op ";
-        throw c;
+        throw std::logic_error("Bad argument");
     }
-
 }
 
 void Parser::Var() {
-    if (!std::isalpha(c)) {
-        std::cout << "Var ";
-        throw c;
-    } else {
+    /* < */
+    lvalue = true;
+    stack.push(c);
+    /* > */
 
-        /* < */
-        lvalue = true;
-        stack.push(c);
-        /* > */
-
-        gc();
-    }
+    gc();
 }
 
 void Parser::Num() {
-    if (!std::isdigit(c)) {
-        std::cout << "Num ";
-        throw c;
-    } else {
+    /* < */
+    lvalue = false;
+    stack.push(c - '0');
+    /* > */
 
-        /* < */
-        lvalue = false;
-        stack.push(c - '0');
-        /* > */
-
-        gc();
-    }
+    gc();
 }
 
 int Parser::get_value() const { return value; }
 
 int Parser::get_value_of_var(int operand) {
     if (vars.find(operand) == vars.end()) {
-        std::cout << "uninit var ";
-        throw c;
+        throw std::logic_error("Not init var");
     } else {
         return vars[operand];
     }
@@ -261,19 +252,15 @@ int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
         std::stringstream input(line);
-        std::cout << "____________\n";
-        std::cout << line << std::endl;
         try
         {
             parser.parse(input);
-            std::cout << "YES, value is " << parser.get_value() << std::endl;
-            parser.print_vars();
+            std::cout << parser.get_value() << std::endl;
         }
-        catch(int c)
+        catch(const std::exception &)
         {
-            std::cout << std::endl << "NO" << std::endl;
+            std::cout << "NO" << std::endl;
         }
-        std::cout << "____________\n";
     }
     return 0;
 }
