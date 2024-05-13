@@ -157,7 +157,7 @@ void ShellParser::SIMPLE() {
         poliz.push_back({Token::ID, cur_sym});
         gc();
         while(names.find(cur_sym) != names.end()) {
-            poliz.push_back({Token::ID, cur_sym});
+            poliz.push_back({Token::ARGV, cur_sym});
             gc();
         }
     } else {
@@ -220,8 +220,11 @@ void Interpreter::interpret(Poliz poliz_) {
             std::string res = op1 + std::string(temp);
             std::cout << "parse " << temp[0] << " str = " << res << std::endl;
             stack.push(res);
-        } else {
-            std::cout << "GG" << std::endl;
+        } else //here argv 
+        {
+            std::string op1 = stack.top();
+            stack.pop();
+            stack.push(op1 + " " + names[token.repr]);
         }
 
     });
