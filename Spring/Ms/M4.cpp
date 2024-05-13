@@ -85,7 +85,6 @@ void Parser::Conjunc() {
 
         Type op1 = stack.top();
         stack.pop();
-        std::cout << "parse |, op1 = " << print_type(op1) << " op2 = " << print_type(op2) << std::endl; 
         if ((op1 == op2) && (op1 == BOOL)) {
             stack.push(BOOL);
         } else {
@@ -106,7 +105,6 @@ void Parser::Disjunc() {
 
         Type op1 = stack.top();
         stack.pop();
-        std::cout << "parse &, op1 = " << print_type(op1) << " op2 = " << print_type(op2) << std::endl; 
         if ((op1 == op2) && (op1 == BOOL)) {
             stack.push(BOOL);
         } else {
@@ -127,7 +125,6 @@ void Parser::Compare() {
 
         Type op1 = stack.top();
         stack.pop();
-        std::cout << "parse <>=, op1 = " << print_type(op1) << " op2 = " << print_type(op2) << std::endl; 
         if ((op1 == op2) && (op1 == INT)) {
             stack.push(BOOL);
         } else {
@@ -148,7 +145,6 @@ void Parser::Plus() {
 
         Type op1 = stack.top();
         stack.pop();
-        std::cout << "parse +, op1 = " << print_type(op1) << " op2 = " << print_type(op2) << std::endl; 
         if ((op1 == op2) && (op1 == INT)) {
             stack.push(INT);
         } else {
@@ -169,7 +165,6 @@ void Parser::Mult() {
 
         Type op1 = stack.top();
         stack.pop();
-        std::cout << "parse *, op1 = " << print_type(op1) << " op2 = " << print_type(op2) << std::endl; 
         if ((op1 == op2) && (op1 == INT)) {
             stack.push(INT);
         } else {
@@ -178,23 +173,12 @@ void Parser::Mult() {
     }
 }
 
-
-
-
-
-
-
-
-
 void Parser::Operand() {
     if (c == 'T') {
-        std::cout << "pushed T" << std::endl;
         stack.push(BOOL);
     } else if (c == 'F') {
-        std::cout << "pushed F" << std::endl;
         stack.push(BOOL);
     } else if (std::isdigit(c)) {
-        std::cout << "pushed " << c - '0' << std::endl;
         stack.push(INT);
     } else if (c == '(') {
         gc();
@@ -214,8 +198,6 @@ int main() {
     std::string line;
     
     while (std::getline(std::cin, line)) {
-        std::cout << "------------------" << std::endl;
-        std::cout << line << std::endl;
         std::stringstream input(line);
         try
         {
@@ -224,10 +206,8 @@ int main() {
         }
         catch(const std::exception &e)
         {
-            std::cout << e.what() << std::endl;
-            // std::cout << "NO" << std::endl;
+            std::cout << "NO" << std::endl;
         }
-        std::cout << "------------------" << std::endl;
     }
     return 0;
 }
