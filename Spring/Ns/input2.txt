@@ -1,0 +1,5 @@
+aprogram
+btext1
+ctext2
+
+a<b&a>c+a>b<c;
