@@ -9,7 +9,6 @@
 #include <vector>
 #include <algorithm>
 
-
 /*
     Грамматика:
 
@@ -40,7 +39,6 @@ public:
 private:
 };
 #endif
-
 
 typedef std::set<char> Nodes;
 typedef std::map<char, Nodes> Connections;
@@ -165,8 +163,6 @@ Nodes Parser::get_nodes() { return nodes; }
 Connections Parser::get_connects() { return connects; }
 char Parser::get_root() { return tree_root; }
 
-
-
 Component* make_from_text(std::string const &text, std::map<char, Component *> const &components) {
     Parser parser;
     std::stringstream input(text);
@@ -176,24 +172,29 @@ Component* make_from_text(std::string const &text, std::map<char, Component *> c
     Nodes nodes = parser.get_nodes();
     Connections connects = parser.get_connects();
 
+    if (nodes.size() != components.size()) {
+        throw std::runtime_error("Bad components");
+    }
+
+    //Just check components
+    std::for_each(nodes.begin(), nodes.end(),
+    [&](char node)
+    {
+        if (components.find(node) == components.end()) {
+            throw std::runtime_error("No node in components");
+        }
+    });
+
+    //Work with components
     std::for_each(nodes.begin(), nodes.end(),
     [&](char node)
     {
         std::for_each(connects[node].begin(), connects[node].end(),
         [&](char subnode)
         {
-            if (components.find(node) == components.end()) {
-                throw std::logic_error("No node in components");
-            }
-
-            if (components.find(subnode) == components.end()) {
-                throw std::logic_error("No subnode in components");
-            }
-
             components.at(node)->add_subcomponent(components.at(subnode));
         });
     });
-
 
     return components.at(parser.get_root());
 }
@@ -243,6 +244,7 @@ Component* make_from_text(std::string const &text, std::map<char, Component *> c
 //     }
 //     return 0;
 // }
+
 using Components = std::map<char, Component *>;
 using ComponentsVectors = std::map<int, std::vector<int>>;
 void test_parse_tree() {
@@ -277,7 +279,7 @@ void test_parse_tree() {
         {'z', &z}
     };
 
-    std::string text = "a(b(c(d(),f(g(h(),i())),j(k(),l())),m(),n(o(p(),q()),r(),s(t(),u()))),v(w(x(),y()),z()))";
+    std::string text = "a(b(c(d(),e(),f(g(h(),i())),j(k(),l())),m(),n(o(p(),q()),r(),s(t(),u()))),v(w(x(),y()),z()))";
 
     try {
         make_from_text(text, components);
