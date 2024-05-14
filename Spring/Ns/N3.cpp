@@ -144,6 +144,9 @@ void Parser::Name() {
     if (std::isalpha(c)) {
         /* < */
         cur_node = static_cast<char>(c);
+        if (nodes.find(cur_node) != nodes.end()) {
+            throw std::logic_error("Double used node");
+        }
         nodes.insert(cur_node);
 
         if (tree_root == -1) {
@@ -179,6 +182,14 @@ Component* make_from_text(std::string const &text, std::map<char, Component *> c
         std::for_each(connects[node].begin(), connects[node].end(),
         [&](char subnode)
         {
+            if (components.find(node) == components.end()) {
+                throw std::logic_error("No node in components");
+            }
+
+            if (components.find(subnode) == components.end()) {
+                throw std::logic_error("No subnode in components");
+            }
+
             components.at(node)->add_subcomponent(components.at(subnode));
         });
     });
@@ -280,5 +291,4 @@ int main() {
     test_parse_tree();
     return 0;
 }
-
 #endif
