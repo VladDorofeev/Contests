@@ -18,14 +18,14 @@
 
 struct Token;
 
-using Names = std::map<int, std::string>;
+using Names = std::map<char, std::string>;
 using Poliz = std::vector<Token>;
 
 
 struct Token
 {
     enum Kind {CLOSE, OPEN, REDIRECT, PIPE, CONJ_DISJ, SIGN_SEM, ID, ARGV} kind;
-    int repr;
+    char repr;
 };
 
 
@@ -34,7 +34,7 @@ class ShellParser {
 public:
     ShellParser(Names);
 
-    Poliz parse(std::istream& );
+    Poliz& parse(std::istream& );
 private:
     void COMMAND();
     void SEQ1();
@@ -51,16 +51,6 @@ private:
 };
 
 
-class Interpreter {
-public:
-    Interpreter(Names names_);
-
-    void interpret(Poliz);
-private:
-    Names names;
-};
-
-
 //ShellParser impl
 
 
@@ -70,7 +60,7 @@ ShellParser::ShellParser(Names _names)
 }
 
 
-Poliz ShellParser::parse(std::istream& in) {
+Poliz& ShellParser::parse(std::istream& in) {
     stream_pt = &in;
     poliz.clear();
     gc();
@@ -78,11 +68,6 @@ Poliz ShellParser::parse(std::istream& in) {
     if (cur_sym != EOF) {
         throw std::runtime_error("End but EOF is impossible");
     }
-    // std::cout << "Poliz ";
-    std::for_each(poliz.begin(), poliz.end(), [](Token const& str){
-        // std::cout << char(str.repr) << ' ';
-    });
-    // std::cout << std::endl;
     return poliz;
 }
 
@@ -95,13 +80,18 @@ void ShellParser::COMMAND() {
 void ShellParser::SEQ1() {
     SEQ2();
     while(cur_sym == '&' || cur_sym == ';') {
-        poliz.push_back({Token::SIGN_SEM, cur_sym});
+        /*<*/
+        poliz.push_back({Token::SIGN_SEM, static_cast<char>(cur_sym)});
+        /*>*/
         gc();
         if (names.find(cur_sym) != names.end()) {
             SEQ2();
-        } else if (cur_sym != EOF && cur_sym != ')') {
+        } 
+        /*<*/
+        else if (cur_sym != EOF && cur_sym != ')') {
             throw std::runtime_error("Eps is not in end");
         }
+        /*>*/
     }
 }
 
@@ -109,10 +99,14 @@ void ShellParser::SEQ1() {
 void ShellParser::SEQ2() {
     PIPE();
     while(cur_sym == '*' || cur_sym == '+') {
-        int cur_op = cur_sym;
+        /*<*/
+        char cur_op = cur_sym;
+        /*>*/
         gc();
         PIPE();
+        /*<*/
         poliz.push_back({Token::CONJ_DISJ, cur_op});
+        /*>*/
     }
 }
 
@@ -122,7 +116,9 @@ void ShellParser::PIPE() {
     while(cur_sym == '|') {
         gc();
         RED();
+        /*<*/
         poliz.push_back({Token::PIPE, '|'});
+        /*>*/
     }
 }
 
@@ -130,13 +126,17 @@ void ShellParser::PIPE() {
 void ShellParser::RED() {
     SIMPLE();
     while(cur_sym == '<' || cur_sym == '>') {
-        int cur_op = cur_sym;
+        /*<*/
+        char cur_op = cur_sym;
+        /*>*/
         gc();
         if (names.find(cur_sym) == names.end()) {
             throw std::runtime_error("RED: bad ID");
         }
-        poliz.push_back({Token::ID, cur_sym});
+        /*<*/
+        poliz.push_back({Token::ID, static_cast<char>(cur_sym)});
         poliz.push_back({Token::REDIRECT, cur_op});
+        /*>*/
         gc();
     }
 }
@@ -144,19 +144,27 @@ void ShellParser::RED() {
 
 void ShellParser::SIMPLE() {
     if (cur_sym == '(') {
-        poliz.push_back({Token::OPEN, cur_sym});
+        /*<*/
+        poliz.push_back({Token::OPEN, static_cast<char>(cur_sym)});
+        /*>*/
         gc();
         COMMAND();
         if (cur_sym != ')') {
             throw std::runtime_error("SIMPLE: lost close");
         }
-        poliz.push_back({Token::CLOSE, cur_sym});
+        /*<*/
+        poliz.push_back({Token::CLOSE, static_cast<char>(cur_sym)});
+        /*>*/
         gc();
     } else if (names.find(cur_sym) != names.end()) {
-        poliz.push_back({Token::ID, cur_sym});
+        /*<*/
+        poliz.push_back({Token::ID, static_cast<char>(cur_sym)});
+        /*>*/
         gc();
         while(names.find(cur_sym) != names.end()) {
-            poliz.push_back({Token::ARGV, cur_sym});
+            /*<*/
+            poliz.push_back({Token::ARGV, static_cast<char>(cur_sym)});
+            /*>*/
             gc();
         }
     } else {
@@ -170,87 +178,68 @@ void ShellParser::gc() {
 }
 
 
-//Interpreter impl
+//interpret impl
 
 
-Interpreter::Interpreter(Names names_) 
-    : names(names_)
-{
-}
-
-
-void Interpreter::interpret(Poliz poliz) {
-    // std::string command;
-    // std::stack<Token> args;
-    // Poliz::size_type index = 0;
-    // Poliz::size_type size = poliz.size();
-    // Token poliz_lex;
-    // while(index < size) {
-
-    // }
-    // std::cout << "----------------" << std::endl;
+void interpret(Poliz& poliz, Names& names) {
     std::string cmd;
     std::stack<std::string> stack;
-    char temp[2] = {0,0};
-    std::for_each(poliz.begin(), poliz.end(),
-    [&](const Token &token)
-    {
-        // std::cout << static_cast<char>(token.repr) << std::endl;
-
-        if (token.kind == Token::ID) {
-            // std::cout << "pushed " << (names[token.repr]) << std::endl; 
-            stack.push(names[token.repr]);
-        } else if ((token.kind != Token::SIGN_SEM) && (token.kind != Token::ARGV)&& (token.kind != Token::OPEN)&& (token.kind != Token::CLOSE)){
-            // std::cout << "binary\n";
-            std::string op2 = stack.top();
-            stack.pop();
-            // std::cout << op2 << std::endl;
-            std::string op1 = stack.top();
-            stack.pop();
-            // std::cout << op1 << std::endl;
-
-
-            temp[0] = token.repr;
-            std::string res;
-            if (token.repr == '*') {
-                res = op1 + " && " + op2;
-            } else if (token.repr == '+') {
-                res = op1 + " || " + op2;
-            } else {
-                res = op1 + " " + std::string(temp) + " " + op2;
-            }
-            stack.push(res);
-
-        } else if (token.kind == Token::SIGN_SEM) {
-            std::string op1 = stack.top();
-            stack.pop();
-
-            temp[0] = token.repr;
-            std::string res = op1 + std::string(temp);
-            // std::cout << "parse " << temp[0] << " str = " << res << std::endl;
-            stack.push(res);
-        } else if (token.kind == Token::ARGV) 
+    std::for_each(poliz.begin(), poliz.end(), [&](const Token &token) {
+        std::string op1;
+        std::string op2;
+        std::string res;
+        switch (token.kind)
         {
-            std::string op1 = stack.top();
+        case Token::ID:
+            stack.push(names[token.repr]);
+            break;
+        case Token::ARGV:
+            op1 = stack.top();
             stack.pop();
             stack.push(op1 + " " + names[token.repr]);
-        } else if (token.kind == Token::OPEN){
-        } else if (token.kind == Token::CLOSE){
-            std::string op1 = stack.top();
+            break;
+        case Token::PIPE:
+        case Token::CONJ_DISJ:
+        case Token::REDIRECT:
+            op2 = stack.top();
+            stack.pop();
+            op1 = stack.top();
+            stack.pop();
+            switch (token.repr)
+            {
+            case '*':
+                res = op1 + " && " + op2;
+                break;
+            case '+':
+                res = op1 + " || " + op2;
+                break;
+            default:
+                res = op1 + " " + std::string(1, token.repr) + " " + op2;
+                break;
+            }
+            stack.push(res);
+            break;
+        case Token::SIGN_SEM:
+            op1 = stack.top();
+            stack.pop();
+            res = op1 + std::string(1, token.repr);
+            stack.push(res);
+            break;
+        case Token::OPEN:
+            break;
+        case Token::CLOSE:
+            op1 = stack.top();
             stack.pop();     
             stack.push("(" + op1 + ")");
+            break;
+        default:
+            break;
         }
-
     });
     while (!stack.empty()) {
         cmd = stack.top() + cmd;
         stack.pop();
     }
-    // std::cout <<std::endl<<std::endl<<std::endl<<std::endl<< cmd << std::endl;
-
-    // a<b & a>c+a>b<c;
-
-    // std::cout << "----------------" << std::endl;
     system(cmd.c_str());
 }
 
@@ -259,30 +248,20 @@ int
 main() {
     std::string cur_str;
     Names names;
-    std::getline(std::cin, cur_str);
-    while(!cur_str.empty()) {
-        if (cur_str.length() <= 1) {
-            throw std::runtime_error("Input: bad str");
-        }
-        if (names.find(cur_str[0]) != names.end()) {
-            throw std::runtime_error("Input: bad str 2");
+    while(std::getline(std::cin, cur_str)) {
+        if (cur_str.empty()) {
+            break;
         }
         names[cur_str[0]] = cur_str.substr(1);
-        std::getline(std::cin, cur_str);
     }
-    std::for_each(names.begin(), names.end(), [&](std::pair<const int, std::string> const& p){
-        // std::cout << "ID: " << p.first << " Name: " << p.second << std::endl;
-    });
     ShellParser shell_parser(names);
-    Interpreter interpreter(names);
     while(std::getline(std::cin, cur_str)) {
         try{
             std::vector<Token> poliz;
             std::istringstream sin(cur_str);
-            poliz = shell_parser.parse(sin);
-            interpreter.interpret(poliz);
+            interpret(shell_parser.parse(sin), names);
         } catch(std::runtime_error& err) {
-            // std::cout << err.what() << std::endl;
+            std::cout << err.what() << std::endl;
         }
     }
 }
