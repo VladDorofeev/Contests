@@ -1,0 +1,11 @@
+S -> Bb | Cc
+B -> Bb | Ab
+C -> Cc | Ab
+A -> a
+
+ab(b^n|c^n) , n>=1
+
+Дерево вывода (варианты)
+S -> Bb -> B(b^n)b , n>=0, -> Ab (b^n)b -> ab (b^n) b
+  -> Cc -> C(c^n)b , n>=0, -> Ab (c^n)b -> ab (c^n) b
+
