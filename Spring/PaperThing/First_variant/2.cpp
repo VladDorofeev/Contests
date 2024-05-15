@@ -13,25 +13,21 @@ public:
         Iterator(T*);
         Iterator(const Iterator&) = default;
 
-        Iterator operator++(int);
-        Iterator& operator++();
+        Iterator operator++(int) const;
+        Iterator & operator++();
+        Iterator const& operator++() const;
         
         T& operator*();
         T operator*() const;
         T* operator->();
         T const* operator->() const;
 
-        friend bool operator!=(Iterator const &it1, Iterator const &it2) {
-            return it1.operator->() != it2.operator->();
-        }
-
-
+        bool operator!=(Iterator const &it) const;
     private:
-        T *ptr;
+        mutable T *ptr;
     };
 
     using ConstIterator = const Iterator;
-
 
     MyVector();
     MyVector(const MyVector &);
@@ -45,6 +41,7 @@ public:
 
     void push_back(const T&);
 
+    MyVector operator+(const MyVector &) const;
 private:
     void swap(MyVector &other);
 
@@ -53,7 +50,7 @@ private:
     int cap;
 };
 
-
+////////////////////////////////////
 
 template<class T>
 MyVector<T>::MyVector() :
@@ -118,7 +115,6 @@ void MyVector<T>::push_back(const T &elem) {
         ++cap;
         T *temp = reinterpret_cast<T*> (new char[cap * sizeof(T)]);
 
-        std::cout << "wtf\n";
         for (int i = 0; i < sz; i++) {
             new (&temp[i]) T(arr[i]);
         }
@@ -133,8 +129,6 @@ void MyVector<T>::push_back(const T &elem) {
     new (&arr[sz++]) T(elem);
 }
 
-
-
 template<class T>
 MyVector<T>::Iterator MyVector<T>::begin() { return arr; }
 
@@ -147,7 +141,25 @@ MyVector<T>::ConstIterator MyVector<T>::begin() const { return arr; }
 template<class T>
 MyVector<T>::ConstIterator MyVector<T>::end() const { return (arr + sz); }
 
+template<class T>
+MyVector<T> MyVector<T>::operator+(const MyVector<T> &other) const {
+    if (sz != other.sz) {
+        throw std::exception();
+    }
 
+    MyVector<T> sum(*this);
+    MyVector<T> op(other);
+    
+    MyVector<T>::Iterator other_iter = op.begin();
+    
+    for (MyVector<T>::Iterator it = sum.begin(); it != sum.end(); ++it) {
+        *it = *it + *other_iter++;
+    }
+
+    return sum;
+}
+
+/////////////////////////////////////////////
 
 template<class T>
 MyVector<T>::Iterator::Iterator(T *_ptr) :
@@ -156,15 +168,20 @@ MyVector<T>::Iterator::Iterator(T *_ptr) :
 }
 
 template<class T>
-MyVector<T>::Iterator MyVector<T>::Iterator::operator++(int) {
+MyVector<T>::Iterator MyVector<T>::Iterator::operator++(int) const {
     Iterator temp(*this);
     ptr++;
     return temp;
 }
 
-
 template<class T>
 MyVector<T>::Iterator& MyVector<T>::Iterator::operator++() {
+    ptr++;
+    return *this;
+}
+
+template<class T>
+MyVector<T>::Iterator const& MyVector<T>::Iterator::operator++() const {
     ptr++;
     return *this;
 }
@@ -187,6 +204,24 @@ T* MyVector<T>::Iterator::operator->() {
 template<class T>
 T const* MyVector<T>::Iterator::operator->() const {
     return ptr;
+}
+
+template<class T>
+bool MyVector<T>::Iterator::operator!=(typename MyVector<T>::Iterator const &iter) const {
+    return ptr != iter.operator->();
+}
+
+///////////////////////
+
+template<class T>
+void square(MyVector<T> &vec) {
+    throw std::exception();
+}
+template<>
+void square(MyVector<int> &vec) {
+    for (MyVector<int>::Iterator it = vec.begin(); it != vec.end(); it++) {
+        *it = (*it) * (*it);
+    }
 }
 
 
@@ -212,7 +247,19 @@ int main()
     vecvec.push_back(vec);
     MyVector<MyVector<int>> vecvec2;
     vecvec2 = vecvec2 = vecvec2 = vecvec;
-    vecvec2.push_back(MyVector<int>());
+
+    std::for_each(vecvec2.begin(), vecvec2.end(), 
+    [](auto elem)
+    {
+        std::for_each(elem.begin(), elem.end(), 
+        [](auto item)
+        {
+            std::cout << item << ' ';
+        });
+        std::cout << std::endl;
+    });
+    vecvec2 = vecvec2 + vecvec2;
+
     std::for_each(vecvec2.begin(), vecvec2.end(), 
     [](auto elem)
     {
@@ -224,6 +271,37 @@ int main()
         std::cout << std::endl;
     });
 
+    try
+    {
+        square(vec);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
+    std::cout << "=============" << std::endl;
+
+    std::for_each(vec.begin(), vec.end(), 
+    [](auto item)
+    {
+        std::cout << item << ' ';
+    });
+    std::cout << std::endl;
+
+    try
+    {
+        square(vecvec2);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
+    for(MyVector<int>::ConstIterator it = vec.begin(); it != vec.end(); ++it) {
+        std::cout << *it << ' ';
+    }
+    std::cout << std::endl;
 
     return 0;
 }
