@@ -21,6 +21,11 @@ public:
         T* operator->();
         T const* operator->() const;
 
+        friend bool operator!=(Iterator const &it1, Iterator const &it2) {
+            return it1.operator->() != it2.operator->();
+        }
+
+
     private:
         T *ptr;
     };
@@ -64,7 +69,7 @@ MyVector<T>::MyVector(const MyVector<T> &other) :
     sz(other.sz),
     cap(other.cap)
 {
-    arr = reinterpret_cast<T*> (new char[sz * sizeof(T)]);
+    arr = reinterpret_cast<T*> (new char[cap * sizeof(T)]);
     for (int i = 0; i < sz; i++) {
         new (&arr[i]) T(other.arr[i]);
     }
@@ -102,21 +107,26 @@ MyVector<T>::~MyVector() {
     for (int i = 0; i < sz; i++) {
         arr[i].~T();
     }
-    delete[] arr;
+    delete[] reinterpret_cast<char*>(arr);
 }
 
 
 template<class T>
 void MyVector<T>::push_back(const T &elem) {
     if (sz == cap) {
-        cap = (cap==0) ? 100 : (cap * 2);
+        cap = (cap == 0) ? 3 : (cap * 2);
+        ++cap;
+        T *temp = reinterpret_cast<T*> (new char[cap * sizeof(T)]);
 
-        T *temp = reinterpret_cast<T*> (new char[sz * sizeof(T)]);
-
-        
+        std::cout << "wtf\n";
         for (int i = 0; i < sz; i++) {
             new (&temp[i]) T(arr[i]);
         }
+
+        for (int i = 0; i < sz; i++) {
+            arr[i].~T();
+        }
+        delete[] reinterpret_cast<char*>(arr);
 
         arr = temp;
     }
@@ -179,12 +189,6 @@ T const* MyVector<T>::Iterator::operator->() const {
     return ptr;
 }
 
-template<typename T>
-bool operator!=(typename MyVector<int>::Iterator &it1, typename MyVector<int>::Iterator &it2) {
-    return it1.operator->() != it2.operator->();
-}
-
-
 
 int main() 
 {
@@ -193,32 +197,32 @@ int main()
     vec.push_back(2);
     vec.push_back(3);
     vec.push_back(4);
+    vec.push_back(5);
+    vec.push_back(6);
+    vec.push_back(7);
+    vec.push_back(8);
 
 
-    MyVector<int>::Iterator end = vec.end();
-    for (MyVector<int>::Iterator iter = vec.begin(); iter != end; iter++) {
-        std::cout << *iter << ' ';
-    }
     std::cout << std::endl;
-
-    // for (MyVector<int>::Iterator iter = vec.begin(); iter != vec.end(); ++iter) {
-    //     std::cout << *iter << ' ';
-    // }
-    // std::cout << std::endl;
-
-
-    // for (int elem : vec) {
-    //     std::cout << elem << ' ';
-        
-    // }
-    // std::cout << std::endl;
-
-    // std::for_each(vec.begin(), vec.end(), 
-    // [](auto elem)
-    // {
-    //     std::cout << elem << ' ';
-    // });
-    // std::cout << std::endl;
+    MyVector<MyVector<int>> vecvec;
+    vecvec.push_back(vec);
+    vecvec.push_back(vec);
+    vecvec.push_back(vec);
+    vecvec.push_back(vec);
+    vecvec.push_back(vec);
+    MyVector<MyVector<int>> vecvec2;
+    vecvec2 = vecvec2 = vecvec2 = vecvec;
+    vecvec2.push_back(MyVector<int>());
+    std::for_each(vecvec2.begin(), vecvec2.end(), 
+    [](auto elem)
+    {
+        std::for_each(elem.begin(), elem.end(), 
+        [](auto item)
+        {
+            std::cout << item << ' ';
+        });
+        std::cout << std::endl;
+    });
 
 
     return 0;
