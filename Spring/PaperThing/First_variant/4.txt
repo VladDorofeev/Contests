@@ -1,0 +1,21 @@
+L1 = {a^n b^n, n >= 0}
+L2 = {a^n c^n, n >= 0}
+
+L = {L1 + L2} = {a^n (b^n | c^n) }
+
+<cnt=0>
+S    ->    A <if cnt != 0 then ERROR>
+A    ->    a <cnt++> A   |   b <cnt--> B   |   c <cnt--> C   |   eps   
+B    ->    b <cnt--> B   |      eps
+C    ->    c <cnt--> C   |      eps
+
+1) 
+    По first-first нет пересечений (это видно)
+
+2) 
+    Нет двух+ альтернатив, выводящих eps
+
+3)
+    follow(A) \cap first(aB) = 0
+    follow(B) \cap first(bB) = 0
+    follow(C) \cap first(cC) = 0
