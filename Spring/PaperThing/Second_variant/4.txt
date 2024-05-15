@@ -1,0 +1,60 @@
+L1 = {a^n a^m b^n c^m, n>=0 m>=0}
+L2 = {{a,b,c}*}
+
+L1\L2 = {L1 \ w, where b,c in w} = 0
+потому что L2 это все цепочки а L1 это подцепочки L2
+
+любая w in L1 => w in L2
+L1 \ L2 = 0
+
+
+S -> eps
+
+#include <iostream>
+#include <string>
+#include <sstream>
+
+class Parser {
+public:
+    Parser();
+    bool parse(std::istream &);
+private:
+    std::istream * stream;
+    int c;
+    S();
+};
+
+Parser::Parser(): stream(nullptr), c(0) {}
+
+bool
+Parser::parse(std::istream &x) {
+    stream = &x;
+    gc();
+    S();
+    if (c != EOF) {
+        throw std::logic_error("BAD");
+    }
+    return true;
+}
+
+void
+Parser::gc() {
+    c = stream->get();
+}
+
+void Parser::S() {
+    //hehe
+}
+
+int
+main() {
+    std::string s;
+    while (getline(std::cin, s)) {
+        std::stringstream new_stream;
+        Parser parser;
+        new_stream.str(s);
+        std::cout << (parser.parse(new_stream) ? "YES"  :  "NO") << std::endl;
+    }
+    return 0;
+}
+
