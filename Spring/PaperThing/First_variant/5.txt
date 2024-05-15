@@ -1,0 +1,7 @@
+L = {(ab)^n (cd)^m, n,m >= 0}
+
+f(L) = {(ab)^m (cd)^n, n,m -- same as in a L}
+
+S -> P1
+P1 -> ab P1 <c> <d> | P2
+P2 -> cd <a> <b> P2 | eps
