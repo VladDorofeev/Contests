@@ -1,0 +1,10 @@
+L = {a^n b^m c^k, mnk >= 0}
+
+f(L) = a^m b^k c^n
+
+S -> A
+A -> aA <c>    | B
+B -> b  <a> B  | C
+C -> cC <b>    | eps
+
+    
