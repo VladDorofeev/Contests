@@ -1,0 +1,57 @@
+a) 
+    Если он =delete
+    Если определена:  move ctr || move = 
+
+    struct A{   
+        A(A&&) {}
+    };
+    
+    struct A{   
+        A& operator= (A&&) {return *this;}
+    };
+
+    struct A{   
+        A(const A&) = delete;
+    };
+
+б) 
+    struct A{};
+    A a;
+    
+    1) A b(a);
+       A c = a;
+
+    2) A d = A();
+
+    3) void func(A obj);
+       func(a)
+
+    4)
+    A func() {
+        return A(); //here first
+    }
+
+    A a = func(); //here second like a 2) 
+
+в) 
+    class A
+    {
+    public: 
+        [virtual] ~A() {std::cout << "~A()" << std::endl;}
+    private:
+        int a;
+    };
+
+    class B : A 
+    {
+    public:
+        ~B() {std::cout << "~B()" << std::endl;}
+    private:
+    }
+
+    A *obj = new B();
+    delete obj; 
+
+    Если деструктор виртуальный, то вывод будет ~B() ~A()
+    Если деструктор не виртуальный, то вывод будет ~A()
+
