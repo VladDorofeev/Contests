@@ -19,7 +19,7 @@ public:
     void add(const T&);
     void del(int, T &);
 
-    int capacity() const { return cap; }
+    int capacity() const { return cap; } // Not necessary
 private:
     void swap(MultiSet&);
 
@@ -60,18 +60,15 @@ MultiSet<T>::MultiSet(const MultiSet<T>& other, int _new_cap) :
 { 
     int new_cap = ((_new_cap >= other.cap) && (_new_cap > 0)) ? _new_cap : other.cap;
     
-    T *temp = new T[new_cap]; //can throw //gut
+    T *temp = new T[new_cap];
     
     for (int i = 0; i < other.sz; i++) {
         try
         {
-            temp[i] = other.arr[i]; //can throw //gut
+            temp[i] = other.arr[i];
         }
-        catch(...)
+        catch(const std::exception &err)
         {
-            for (int j = 0; j < i; j++) {
-                temp[j].~T();
-            }
             delete[] temp;
             throw;
         }
@@ -94,12 +91,7 @@ MultiSet<T>& MultiSet<T>::operator=(MultiSet<T> other) {
 
 template <class T>
 MultiSet<T>::~MultiSet() {
-    for (int i = 0; i < sz; i++) {
-        arr[i].~T();
-    }
-
     delete[] arr;
-    
     sz = 0;
     cap = 0;
 }
@@ -140,10 +132,29 @@ void MultiSet<T>::add(const T &elem) {
         arr[sz] = elem;
         sz++;
     }
-    catch(...)
+    catch(const std::exception &err)
     {
         throw;
     }
+}
+
+template<class T>
+void MultiSet<T>::del(int index, T &elem) {
+    T saved_elem = (*this)[index];
+    MultiSet<T> temp(*this);
+    
+    try
+    {
+        (*this)[index] = arr[sz-1];
+        elem = saved_elem;
+        sz--;
+    }
+    catch(const std::exception& e)
+    {
+        swap(temp);
+        throw;
+    }
+    
 }
 
 template<class T>
@@ -161,36 +172,6 @@ void print(const MultiSet<T> &set) {
     std::cout << std::endl;
     std::cout << "==============================" << std::endl;
 }
-
-struct Type
-{
-public:
-    Type() : item(0) {}
-    Type(int num) : item(num) {}
-    Type& operator= (const Type &other);
-    ~Type() = default;
-
-    int item;
-    static int cnt;
-};
-
-int Type::cnt = 0;
-
-Type& Type::operator= (const Type &other) {
-    if (this  == &other) {
-        return *this;
-    }
-
-    cnt++;
-    if (cnt == 5) {
-        throw std::logic_error("TYPE ENDED");
-    }
-
-    item = other.item;
-
-    return *this;
-}
-
 
 int main() {
     MultiSet<int> set;
@@ -220,16 +201,11 @@ int main() {
     set = set = set = set = set1;
     print(set);
 
-    set = MultiSet<int> ();
-    print(set);
-
-    MultiSet<int> set2(set1, 123);
-    print(set2);
+    MultiSet<int> set2(set1, 123);    
 
     try
     {
-        /* code */
-        set2[1231] = 123;
+        set2[99084] = 123;
     }
     catch(const std::exception& e)
     {
@@ -237,43 +213,13 @@ int main() {
     }
 
     print(set2);
+    int a;
+    set2.del(1, a);
+    print(set2);
+    std::cout << a << std::endl;
 
-
-    std::cout << "---------------------" << std::endl;
-
-
-    MultiSet<Type> typeset;
-    try
-    {
-        typeset.add(Type(1));
-        typeset.add(Type(2));
-        typeset.add(Type(3));
-        typeset.add(Type(4));
-        typeset.add(Type(5));
-        typeset.add(Type(6));
-        typeset.add(Type(7));
-        typeset.add(Type(8));
-        typeset.add(Type(9));
-        typeset.add(Type(10));
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-        std::cout << "==============================" << std::endl;
-        if (typeset.size() == 0) {
-            std::cout << "clear set " << std::endl;
-            
-        } else {
-            std::cout << "sz = " << typeset.size() << " cap = " << typeset.capacity() << std::endl;
-            for (int i = 0; i < typeset.size(); i++) {
-                std::cout << typeset[i].item << ' ';
-            }    
-            std::cout << std::endl;
-            std::cout << "==============================" << std::endl;
-        }
-    }
-    
-    
-
+    set2.clear();
+    set2 = set;
+    print(set2);
     return 0;
 }
